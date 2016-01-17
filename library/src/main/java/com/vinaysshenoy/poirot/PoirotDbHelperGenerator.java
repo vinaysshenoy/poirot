@@ -35,8 +35,8 @@ class PoirotDbHelperGenerator {
 
         final List<JavaFile> filesToCreate = new ArrayList<>();
 
-        final MigrationsGenerator migrationsGenerator = new MigrationsGenerator(mSchemas);
-        filesToCreate.addAll(migrationsGenerator.createMigrationsFor());
+        final Migrations migrations = new Migrations(mSchemas);
+        filesToCreate.addAll(migrations.createMigrationsFor());
         filesToCreate.add(createDbHelperFile(currentSchema));
 
         for (JavaFile javaFile : filesToCreate) {
@@ -53,6 +53,40 @@ class PoirotDbHelperGenerator {
         final ParameterSpec contextParameterSpec = ParameterSpec.builder(contextClassName, "context").build();
         final ParameterSpec nameParameterSpec = ParameterSpec.builder(String.class, "name").build();
         final ParameterSpec factoryParameterSpec = ParameterSpec.builder(cursorFactoryClassName, "factory").build();
+        final ParameterSpec dbParamSpec = ParameterSpec.builder(ClassName.get("android.database.sqlite", "SQLiteDatabase"), "db").build();
+        final ParameterSpec oldVersionParameterSpec = ParameterSpec.builder(int.class, "oldVersion").build();
+        final ParameterSpec newVersionParameterSpec = ParameterSpec.builder(int.class, "newVersion").build();
+
+        final MethodSpec.Builder onUpgradeMigrationSpecBuilder = MethodSpec.methodBuilder("onUpgrade")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .addParameters(Arrays.asList(dbParamSpec, oldVersionParameterSpec, newVersionParameterSpec))
+                .beginControlFlow("switch($L) ", newVersionParameterSpec.name);
+
+        Schema from, to;
+        final String packageName = currentSchema.getDefaultJavaPackage() + ".helper.migrations";
+        for (int i = 0; i < mSchemas.size(); i++) {
+            if (i == 0) {
+                //No need for a migration for the 1st schema version
+                continue;
+            }
+
+            from = mSchemas.get(i - 1);
+            to = mSchemas.get(i);
+
+            onUpgradeMigrationSpecBuilder
+                    .beginControlFlow("case $L:", to.getVersion())
+                    .addStatement(
+                            "new $T().applyMigration($L, $L)",
+                            Migrations.generateMigrationName(packageName, from.getVersion(), to.getVersion()),
+                            dbParamSpec.name, oldVersionParameterSpec.name)
+                    .addStatement("break")
+                    .endControlFlow();
+        }
+
+        onUpgradeMigrationSpecBuilder.endControlFlow();
+        final MethodSpec onUpgradeMigrationSpec = onUpgradeMigrationSpecBuilder.build();
+
 
         final TypeSpec poirotDbHelperSpec = TypeSpec.classBuilder("PoirotDbHelper")
                 .superclass(ClassName.get(currentSchema.getDefaultJavaPackage(), "DaoMaster", "OpenHelper"))
@@ -62,6 +96,7 @@ class PoirotDbHelperGenerator {
                         .addParameters(Arrays.asList(contextParameterSpec, nameParameterSpec, factoryParameterSpec))
                         .addStatement("super($L, $L, $L)", contextParameterSpec.name, nameParameterSpec.name, factoryParameterSpec.name)
                         .build())
+                .addMethod(onUpgradeMigrationSpec)
                 .build();
 
         return JavaFile.builder(currentSchema.getDefaultJavaPackage() + ".helper", poirotDbHelperSpec)

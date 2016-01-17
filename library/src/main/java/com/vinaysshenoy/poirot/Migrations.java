@@ -12,7 +12,7 @@ import java.util.Locale;
 /**
  * Created by vinaysshenoy on 17/01/16.
  */
-public class MigrationsGenerator {
+public class Migrations {
 
     private final ClassName mAbstractMigrationClassName;
 
@@ -24,7 +24,7 @@ public class MigrationsGenerator {
 
     private final Schema mCurrentSchema;
 
-    public MigrationsGenerator(List<Schema> schemas) {
+    public Migrations(List<Schema> schemas) {
         this.mSchemas = schemas;
         mCurrentSchema = schemas.get(schemas.size() - 1);
         mPackageName = mCurrentSchema.getDefaultJavaPackage() + ".helper.migrations";
@@ -72,7 +72,7 @@ public class MigrationsGenerator {
         final ParameterSpec dbParamSpec = ParameterSpec.builder(mDbClassName, "db").build();
         final ParameterSpec versionParamSpec = ParameterSpec.builder(int.class, "currentVersion").build();
 
-        final ClassName migrationClassName = generateMigrationName(fromVersion, toVersion);
+        final ClassName migrationClassName = generateMigrationName(mPackageName, fromVersion, toVersion);
 
         final MethodSpec getTargetVersionSpec = MethodSpec.methodBuilder("getTargetVersion")
                 .addAnnotation(Override.class)
@@ -97,7 +97,7 @@ public class MigrationsGenerator {
         if (beforeFrom == null) {
             getPreviousMigrationBuilder.addStatement("return null");
         } else {
-            getPreviousMigrationBuilder.addStatement("return new $T()", generateMigrationName(beforeFrom.getVersion(), fromVersion));
+            getPreviousMigrationBuilder.addStatement("return new $T()", generateMigrationName(mPackageName, beforeFrom.getVersion(), fromVersion));
         }
 
         getPreviousMigrationSpec = getPreviousMigrationBuilder.build();
@@ -183,7 +183,7 @@ public class MigrationsGenerator {
                 .build();
     }
 
-    private ClassName generateMigrationName(int fromVersion, int toVersion) {
-        return ClassName.get(mPackageName, String.format(Locale.US, "MigrateV%dToV%d", fromVersion, toVersion));
+    public static ClassName generateMigrationName(String packageName, int fromVersion, int toVersion) {
+        return ClassName.get(packageName, String.format(Locale.US, "MigrateV%dToV%d", fromVersion, toVersion));
     }
 }
