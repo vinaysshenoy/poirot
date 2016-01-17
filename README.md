@@ -1,2 +1,2 @@
 # poirot
-Adds migration support for Grendao
+Adds migration support for Greendao
