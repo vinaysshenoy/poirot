@@ -2,6 +2,7 @@ package com.vinaysshenoy.poirot;
 
 import com.squareup.javapoet.*;
 import de.greenrobot.daogenerator.Entity;
+import de.greenrobot.daogenerator.Property;
 import de.greenrobot.daogenerator.Schema;
 
 import javax.lang.model.element.Modifier;
@@ -76,7 +77,7 @@ public class Migrations {
             throw new IllegalArgumentException("Cannot generate a migration from " + fromVersion + " to " + toVersion);
         }
 
-        final ClassName migrationClassName = SchemaUtils.generateMigrationName(mPackageName, from, to);
+        final ClassName migrationClassName = Utils.generateMigrationName(mPackageName, from, to);
 
         final MethodSpec getTargetVersionSpec = MethodSpec.methodBuilder("getTargetVersion")
                 .addAnnotation(Override.class)
@@ -101,7 +102,7 @@ public class Migrations {
         if (beforeFrom == null) {
             getPreviousMigrationBuilder.addStatement("return null");
         } else {
-            getPreviousMigrationBuilder.addStatement("return new $T()", SchemaUtils.generateMigrationName(mPackageName, beforeFrom, from));
+            getPreviousMigrationBuilder.addStatement("return new $T()", Utils.generateMigrationName(mPackageName, beforeFrom, from));
         }
 
         getPreviousMigrationSpec = getPreviousMigrationBuilder.build();
@@ -129,19 +130,23 @@ public class Migrations {
                 .addStatement("$L($L,$L)", "prepareMigration", mDbParameterSpec.name, mCurrentVersionParameterSpec.name);
 
 
-        final List<Entity> addedEntities = SchemaUtils.getAdded(from, to);
+        final List<Entity> addedEntities = Utils.getAdded(from, to);
         System.out.println(String.format(Locale.US, "Added %d entities when going from v%d to v%d", addedEntities.size(), from.getVersion(), to.getVersion()));
-        ClassName entityDaoClassName;
-        if(addedEntities.size() > 0) {
+        if (addedEntities.size() > 0) {
             for (Entity addedEntity : addedEntities) {
-                entityDaoClassName = ClassName.get(mCurrentSchema.getDefaultJavaPackage(), addedEntity.getClassNameDao());
-                applyMigrationSpecBuilder.addStatement("$T.createTable($L, true)", entityDaoClassName, mDbParameterSpec.name);
+
+                final Property pkProperty = addedEntity.getPkProperty();
+                final String pkColumnDef = String.format(Locale.US, "\"%s\" %s %s", pkProperty.getColumnName(), pkProperty.getColumnType(), pkProperty.getConstraints());
+                applyMigrationSpecBuilder.addStatement("$L.execSQL($S)",
+                        mDbParameterSpec.name,
+                        String.format(Locale.US, "CREATE TABLE \"%s\" (%s);", addedEntity.getTableName(), pkColumnDef)
+                );
             }
         }
 
-        final List<Entity> removedEntities = SchemaUtils.getRemoved(from, to);
+        final List<Entity> removedEntities = Utils.getRemoved(from, to);
         System.out.println(String.format(Locale.US, "Removed %d entities when going from v%d to v%d", removedEntities.size(), from.getVersion(), to.getVersion()));
-        if(removedEntities.size() > 0) {
+        if (removedEntities.size() > 0) {
             for (Entity removedEntity : removedEntities) {
                 applyMigrationSpecBuilder.addStatement("$L.execSQL($S)", mDbParameterSpec.name, String.format(Locale.US, "DROP TABLE IF EXISTS \"%s\"", removedEntity.getTableName()));
             }

@@ -4,6 +4,7 @@ import com.squareup.javapoet.*;
 import de.greenrobot.daogenerator.Schema;
 
 import javax.lang.model.element.Modifier;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,7 +30,7 @@ class PoirotDbHelperGenerator {
         this.mSchemas = new ArrayList<>(schemas);
     }
 
-    public void generateHelper() throws IOException {
+    public void generateHelper(String outputDirectory) throws IOException {
 
         final Schema currentSchema = mSchemas.get(mSchemas.size() - 1);
 
@@ -39,8 +40,9 @@ class PoirotDbHelperGenerator {
         filesToCreate.addAll(migrations.createMigrations());
         filesToCreate.add(createDbHelperFile(currentSchema));
 
+        Utils.ensureDirectory(outputDirectory);
         for (JavaFile javaFile : filesToCreate) {
-            javaFile.writeTo(System.out);
+            javaFile.writeTo(new File(outputDirectory));
         }
 
     }
@@ -78,7 +80,7 @@ class PoirotDbHelperGenerator {
                     .beginControlFlow("case $L:", to.getVersion())
                     .addStatement(
                             "new $T().applyMigration($L, $L)",
-                            SchemaUtils.generateMigrationName(packageName, from, to),
+                            Utils.generateMigrationName(packageName, from, to),
                             dbParamSpec.name, oldVersionParameterSpec.name)
                     .addStatement("break")
                     .endControlFlow();

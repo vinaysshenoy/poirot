@@ -4,14 +4,15 @@ import com.squareup.javapoet.ClassName;
 import de.greenrobot.daogenerator.Entity;
 import de.greenrobot.daogenerator.Schema;
 
+import java.io.File;
 import java.util.*;
 
 /**
  * Created by vinaysshenoy on 17/01/16.
  */
-public final class SchemaUtils {
+public final class Utils {
 
-    private SchemaUtils() {
+    private Utils() {
 
     }
 
@@ -83,6 +84,26 @@ public final class SchemaUtils {
             return new ArrayList<>(entityMap.values());
         } else {
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Ensures that the directories exist
+     */
+    public static void ensureDirectory(String... filePaths) {
+
+        if (filePaths != null) {
+            File file;
+            for (String filePath : filePaths) {
+                file = new File(filePath);
+                if (file.exists() && !file.isDirectory()) {
+                    throw new IllegalArgumentException("Given path is not a directory: " + file.getAbsolutePath());
+                } else if (!file.exists()) {
+                    if (!file.mkdirs()) {
+                        throw new IllegalStateException("Could not create directory: " + file.getAbsolutePath());
+                    }
+                }
+            }
         }
     }
 }

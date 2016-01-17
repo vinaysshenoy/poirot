@@ -74,7 +74,7 @@ public class Poirot {
         Collections.sort(mSchemas, SCHEMA_COMPARATOR);
         validateSchemas();
 
-        ensureDirectory(currentSchemaOutputDirectory, olderSchemaOutputDirectory);
+        Utils.ensureDirectory(currentSchemaOutputDirectory, olderSchemaOutputDirectory);
 
         final DaoGenerator generator = new DaoGenerator();
         for (int i = 0; i < mSchemas.size(); i++) {
@@ -85,28 +85,8 @@ public class Poirot {
         }
 
         final PoirotDbHelperGenerator helperGenerator = new PoirotDbHelperGenerator(mSchemas);
-        helperGenerator.generateHelper();
+        helperGenerator.generateHelper(currentSchemaOutputDirectory);
 
-    }
-
-    /**
-     * Ensures that the directories exist
-     */
-    private void ensureDirectory(String... filePaths) {
-
-        if (filePaths != null) {
-            File file;
-            for (String filePath : filePaths) {
-                file = new File(filePath);
-                if (file.exists() && !file.isDirectory()) {
-                    throw new IllegalArgumentException("Given path is not a directory: " + file.getAbsolutePath());
-                } else if (!file.exists()) {
-                    if (!file.mkdirs()) {
-                        throw new IllegalStateException("Could not create directory: " + file.getAbsolutePath());
-                    }
-                }
-            }
-        }
     }
 
     /**
