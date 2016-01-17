@@ -88,12 +88,20 @@ public class MigrationsGenerator {
                 .addStatement("return $L", toVersion)
                 .build();
 
-        final MethodSpec getPreviousMigrationSpec = MethodSpec.methodBuilder("getPreviousMigration")
+        final MethodSpec.Builder getPreviousMigrationBuilder = MethodSpec.methodBuilder("getPreviousMigration")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PROTECTED)
-                .returns(mAbstractMigrationClassName)
-                .addStatement("return $L", beforeFrom == null ? "null" : "new " + generateMigrationName(beforeFrom.getVersion(), fromVersion) + "()")
-                .build();
+                .returns(mAbstractMigrationClassName);
+
+        MethodSpec getPreviousMigrationSpec;
+        if (beforeFrom == null) {
+            getPreviousMigrationBuilder.addStatement("return null");
+        } else {
+            getPreviousMigrationBuilder.addStatement("return new $T()", generateMigrationName(beforeFrom.getVersion(), fromVersion));
+        }
+
+        getPreviousMigrationSpec = getPreviousMigrationBuilder.build();
+
 
         final MethodSpec applyMigrationSpec = MethodSpec.methodBuilder("applyMigration")
                 .addAnnotation(Override.class)
