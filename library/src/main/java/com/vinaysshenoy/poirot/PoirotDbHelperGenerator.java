@@ -78,7 +78,7 @@ class PoirotDbHelperGenerator {
                     .beginControlFlow("case $L:", to.getVersion())
                     .addStatement(
                             "new $T().applyMigration($L, $L)",
-                            Migrations.generateMigrationName(packageName, from.getVersion(), to.getVersion()),
+                            SchemaUtils.generateMigrationName(packageName, from, to),
                             dbParamSpec.name, oldVersionParameterSpec.name)
                     .addStatement("break")
                     .endControlFlow();

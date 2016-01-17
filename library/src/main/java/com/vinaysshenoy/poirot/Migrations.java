@@ -1,6 +1,7 @@
 package com.vinaysshenoy.poirot;
 
 import com.squareup.javapoet.*;
+import de.greenrobot.daogenerator.Entity;
 import de.greenrobot.daogenerator.Schema;
 
 import javax.lang.model.element.Modifier;
@@ -24,12 +25,18 @@ public class Migrations {
 
     private final Schema mCurrentSchema;
 
+    private final ParameterSpec mDbParameterSpec;
+
+    private final ParameterSpec mCurrentVersionParameterSpec;
+
     public Migrations(List<Schema> schemas) {
         this.mSchemas = schemas;
         mCurrentSchema = schemas.get(schemas.size() - 1);
         mPackageName = mCurrentSchema.getDefaultJavaPackage() + ".helper.migrations";
         mAbstractMigrationClassName = ClassName.get(mPackageName, "AbstractMigration");
         mDbClassName = ClassName.get("android.database.sqlite", "SQLiteDatabase");
+        mDbParameterSpec = ParameterSpec.builder(mDbClassName, "db").build();
+        mCurrentVersionParameterSpec = ParameterSpec.builder(int.class, "currentVersion").build();
     }
 
     public List<JavaFile> createMigrationsFor() {
@@ -69,10 +76,7 @@ public class Migrations {
             throw new IllegalArgumentException("Cannot generate a migration from " + fromVersion + " to " + toVersion);
         }
 
-        final ParameterSpec dbParamSpec = ParameterSpec.builder(mDbClassName, "db").build();
-        final ParameterSpec versionParamSpec = ParameterSpec.builder(int.class, "currentVersion").build();
-
-        final ClassName migrationClassName = generateMigrationName(mPackageName, fromVersion, toVersion);
+        final ClassName migrationClassName = SchemaUtils.generateMigrationName(mPackageName, from, to);
 
         final MethodSpec getTargetVersionSpec = MethodSpec.methodBuilder("getTargetVersion")
                 .addAnnotation(Override.class)
@@ -97,21 +101,12 @@ public class Migrations {
         if (beforeFrom == null) {
             getPreviousMigrationBuilder.addStatement("return null");
         } else {
-            getPreviousMigrationBuilder.addStatement("return new $T()", generateMigrationName(mPackageName, beforeFrom.getVersion(), fromVersion));
+            getPreviousMigrationBuilder.addStatement("return new $T()", SchemaUtils.generateMigrationName(mPackageName, beforeFrom, from));
         }
 
         getPreviousMigrationSpec = getPreviousMigrationBuilder.build();
 
-
-        final MethodSpec applyMigrationSpec = MethodSpec.methodBuilder("applyMigration")
-                .addAnnotation(Override.class)
-                .addModifiers(Modifier.PUBLIC)
-                .returns(int.class)
-                .addParameters(Arrays.asList(dbParamSpec, versionParamSpec))
-                .addStatement("$L($L,$L)", "prepareMigration", dbParamSpec.name, versionParamSpec.name)
-                .addStatement("return $L()", getMigratedVersionSpec.name)
-                .build();
-
+        final MethodSpec applyMigrationSpec = createApplyMethodSpec(from, to);
 
         final TypeSpec migrationSpec = TypeSpec.classBuilder(migrationClassName.simpleName())
                 .superclass(mAbstractMigrationClassName)
@@ -121,6 +116,33 @@ public class Migrations {
 
         return JavaFile.builder(mPackageName, migrationSpec)
                 .addFileComment(Poirot.GENERATED_FILE)
+                .build();
+    }
+
+    private MethodSpec createApplyMethodSpec(Schema from, Schema to) {
+
+        final MethodSpec.Builder applyMigrationSpecBuilder = MethodSpec.methodBuilder("applyMigration")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(int.class)
+                .addParameters(Arrays.asList(mDbParameterSpec, mCurrentVersionParameterSpec))
+                .addStatement("$L($L,$L)", "prepareMigration", mDbParameterSpec.name, mCurrentVersionParameterSpec.name);
+
+
+        final List<Entity> addedEntities = SchemaUtils.getAdded(from, to);
+        System.out.println(String.format(Locale.US, "Added %d entities when going from v%d to v%d", addedEntities.size(), from.getVersion(), to.getVersion()));
+        ClassName entityDaoClassName;
+        if(addedEntities.size() > 0) {
+            for (Entity addedEntity : addedEntities) {
+                entityDaoClassName = ClassName.get(mCurrentSchema.getDefaultJavaPackage(), addedEntity.getClassNameDao());
+                applyMigrationSpecBuilder.addStatement("$T.createTable($L, true)", entityDaoClassName, mDbParameterSpec.name);
+            }
+        }
+
+
+        applyMigrationSpecBuilder.addStatement("return $L()", "getMigratedVersion");
+
+        return applyMigrationSpecBuilder
                 .build();
     }
 
@@ -183,7 +205,4 @@ public class Migrations {
                 .build();
     }
 
-    public static ClassName generateMigrationName(String packageName, int fromVersion, int toVersion) {
-        return ClassName.get(packageName, String.format(Locale.US, "MigrateV%dToV%d", fromVersion, toVersion));
-    }
 }
