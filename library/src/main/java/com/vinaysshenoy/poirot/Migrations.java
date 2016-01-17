@@ -39,7 +39,7 @@ public class Migrations {
         mCurrentVersionParameterSpec = ParameterSpec.builder(int.class, "currentVersion").build();
     }
 
-    public List<JavaFile> createMigrationsFor() {
+    public List<JavaFile> createMigrations() {
 
         final List<JavaFile> migrationFiles = new ArrayList<>(mSchemas.size());
         migrationFiles.add(createAbstractMigrationFile(mCurrentSchema));
@@ -136,6 +136,14 @@ public class Migrations {
             for (Entity addedEntity : addedEntities) {
                 entityDaoClassName = ClassName.get(mCurrentSchema.getDefaultJavaPackage(), addedEntity.getClassNameDao());
                 applyMigrationSpecBuilder.addStatement("$T.createTable($L, true)", entityDaoClassName, mDbParameterSpec.name);
+            }
+        }
+
+        final List<Entity> removedEntities = SchemaUtils.getRemoved(from, to);
+        System.out.println(String.format(Locale.US, "Removed %d entities when going from v%d to v%d", removedEntities.size(), from.getVersion(), to.getVersion()));
+        if(removedEntities.size() > 0) {
+            for (Entity removedEntity : removedEntities) {
+                applyMigrationSpecBuilder.addStatement("$L.execSQL($S)", mDbParameterSpec.name, String.format(Locale.US, "DROP TABLE IF EXISTS \"%s\"", removedEntity.getTableName()));
             }
         }
 

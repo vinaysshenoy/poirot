@@ -61,4 +61,28 @@ public final class SchemaUtils {
             return Collections.emptyList();
         }
     }
+
+    public static List<Entity> getRemoved(Schema prev, Schema cur) {
+
+        final AbstractList<String> prevEntityClassList = entityClassList(prev);
+        final AbstractList<String> curEntityClassList = entityClassList(cur);
+
+        //Remove all entity classes from the current list that are present in the older list
+        prevEntityClassList.removeAll(curEntityClassList);
+        if (prevEntityClassList.size() > 0) {
+            //We have entities that have been added
+            final Map<String, Entity> entityMap = entityMapFromSchema(prev);
+            final Iterator<Map.Entry<String, Entity>> iterator = entityMap.entrySet().iterator();
+            Map.Entry<String, Entity> next;
+            while (iterator.hasNext()) {
+                next = iterator.next();
+                if (!prevEntityClassList.contains(next.getKey())) {
+                    iterator.remove();
+                }
+            }
+            return new ArrayList<>(entityMap.values());
+        } else {
+            return Collections.emptyList();
+        }
+    }
 }

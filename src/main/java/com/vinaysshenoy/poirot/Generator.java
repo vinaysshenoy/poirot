@@ -24,7 +24,8 @@ public class Generator {
         final Poirot poirot = new Poirot(PACKAGE_NAME);
         createV1Schema(poirot.create(1, false));
         createV2Schema(poirot.create(2, false));
-        createV3Schema(poirot.create(3, true));
+        createV3Schema(poirot.create(3, false));
+        createV4Schema(poirot.create(4, true));
 
         try {
             poirot.generate(CURRENT_SCHEMA_DIR.toString(), OLD_SCHEMA_DIR.toString());
@@ -33,6 +34,69 @@ public class Generator {
             System.out.println("Could not generate entities!");
             e.printStackTrace();
         }
+    }
+
+    private static void createV4Schema(Schema v4) {
+
+        v4.enableKeepSectionsByDefault();
+
+        //Define entities
+        final Entity companyEntity = v4.addEntity("Company");
+        companyEntity.addIdProperty().autoincrement();
+        companyEntity.addStringProperty("companyCode").notNull().unique().index();
+        companyEntity.addStringProperty("name").notNull();
+        companyEntity.addDateProperty("incorporationDate");
+
+        final Entity branchEntity = v4.addEntity("Branch");
+        branchEntity.addIdProperty().autoincrement();
+        branchEntity.addStringProperty("branchCode").notNull().unique().index();
+        branchEntity.addStringProperty("address");
+
+        final Entity functionEntity = v4.addEntity("Function");
+        functionEntity.addIdProperty().autoincrement();
+        functionEntity.addStringProperty("functionCode").notNull().unique();
+        functionEntity.addStringProperty("name");
+
+        final Entity teamEntity = v4.addEntity("Team");
+        teamEntity.addIdProperty().autoincrement();
+        teamEntity.addStringProperty("teamCode").notNull();
+        teamEntity.addStringProperty("name");
+
+        final Entity employeeEntity = v4.addEntity("Employee");
+        employeeEntity.addIdProperty().autoincrement();
+        employeeEntity.addStringProperty("employeeId").notNull().unique();
+        employeeEntity.addStringProperty("designation").notNull().index();
+        employeeEntity.addStringProperty("name").notNull();
+        employeeEntity.addIntProperty("age");
+        employeeEntity.addStringProperty("sex");
+        employeeEntity.addDateProperty("dateOfBirth");
+        employeeEntity.addDateProperty("dateOfJoining").notNull();
+        employeeEntity.addStringProperty("address");
+
+        //Define relationships
+        final Property functionCompanyId = functionEntity.addLongProperty("companyId").notNull().getProperty();
+        functionEntity.addToOne(companyEntity, functionCompanyId);
+        companyEntity.addToMany(functionEntity, functionCompanyId);
+
+        final Property branchCompanyId = branchEntity.addLongProperty("companyId").notNull().getProperty();
+        branchEntity.addToOne(companyEntity, branchCompanyId);
+        companyEntity.addToMany(branchEntity, branchCompanyId);
+
+        final Property teamFunctionId = teamEntity.addLongProperty("functionId").notNull().getProperty();
+        teamEntity.addToOne(functionEntity, teamFunctionId);
+        functionEntity.addToMany(teamEntity, teamFunctionId);
+
+        final Property employeeTeamId = employeeEntity.addLongProperty("teamId").getProperty();
+        employeeEntity.addToOne(teamEntity, employeeTeamId);
+        teamEntity.addToMany(employeeEntity, employeeTeamId);
+
+        final Property teamLeadId = teamEntity.addLongProperty("teamLeadId").getProperty();
+        teamEntity.addToOne(employeeEntity, teamLeadId);
+
+        final Property employeeCompanyId = employeeEntity.addLongProperty("companyId").notNull().getProperty();
+        employeeEntity.addToOne(companyEntity, employeeCompanyId);
+        companyEntity.addToMany(employeeEntity, employeeCompanyId);
+
     }
 
     private static void createV3Schema(Schema v3) {
@@ -71,6 +135,11 @@ public class Generator {
         employeeEntity.addDateProperty("dateOfBirth");
         employeeEntity.addDateProperty("dateOfJoining").notNull();
         employeeEntity.addStringProperty("address");
+
+        final Entity orderEntity = v3.addEntity("Order");
+        orderEntity.addIdProperty().autoincrement();
+        orderEntity.addStringProperty("orderId").notNull().unique().index();
+        orderEntity.addDateProperty("orderDate").notNull();
 
         //Define relationships
         final Property functionCompanyId = functionEntity.addLongProperty("companyId").notNull().getProperty();
@@ -124,6 +193,11 @@ public class Generator {
         employeeEntity.addStringProperty("sex");
         employeeEntity.addDateProperty("dateOfBirth");
         employeeEntity.addDateProperty("dateOfJoining").notNull();
+
+        final Entity orderEntity = v2.addEntity("Order");
+        orderEntity.addIdProperty().autoincrement();
+        orderEntity.addStringProperty("orderId").notNull().unique().index();
+        orderEntity.addDateProperty("orderDate").notNull();
 
         //Define relationships
         final Property functionCompanyId = functionEntity.addLongProperty("companyId").notNull().getProperty();

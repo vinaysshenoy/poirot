@@ -36,7 +36,7 @@ class PoirotDbHelperGenerator {
         final List<JavaFile> filesToCreate = new ArrayList<>();
 
         final Migrations migrations = new Migrations(mSchemas);
-        filesToCreate.addAll(migrations.createMigrationsFor());
+        filesToCreate.addAll(migrations.createMigrations());
         filesToCreate.add(createDbHelperFile(currentSchema));
 
         for (JavaFile javaFile : filesToCreate) {
