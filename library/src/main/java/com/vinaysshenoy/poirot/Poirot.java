@@ -11,6 +11,8 @@ import java.util.*;
  */
 public class Poirot {
 
+    public static final String GENERATED_FILE = "GENERATED FILE! DO NOT MODIFY!";
+
     private static final Comparator<Schema> SCHEMA_COMPARATOR = new Comparator<Schema>() {
         @Override
         public int compare(Schema lhs, Schema rhs) {
@@ -113,14 +115,12 @@ public class Poirot {
     private void validateSchemas() throws IllegalStateException {
 
         final HashSet<Integer> versions = new HashSet<>((int) (mSchemas.size() * 1.33F));
-        String packageName = null;
+
+        if (mSchemas.get(0).getVersion() < 1) {
+            throw new IllegalStateException("Cannot generate schemas with version < 1");
+        }
         for (Schema schema : mSchemas) {
 
-            if (!isEmpty(packageName) && !packageName.equals(schema.getDefaultJavaPackage())) {
-                throw new IllegalStateException("Schemas must not have different package names");
-            } else {
-                packageName = schema.getDefaultJavaPackage();
-            }
             int versionNumber = schema.getVersion();
             if (versions.contains(versionNumber)) {
                 throw new IllegalStateException(

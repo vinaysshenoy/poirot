@@ -35,74 +35,14 @@ class PoirotDbHelperGenerator {
 
         final List<JavaFile> filesToCreate = new ArrayList<>();
 
-        filesToCreate.add(createAbstractMigrationFile(currentSchema));
+        final MigrationsGenerator migrationsGenerator = new MigrationsGenerator(mSchemas);
+        filesToCreate.addAll(migrationsGenerator.createMigrationsFor());
         filesToCreate.add(createDbHelperFile(currentSchema));
 
         for (JavaFile javaFile : filesToCreate) {
             javaFile.writeTo(System.out);
         }
 
-    }
-
-    private JavaFile createAbstractMigrationFile(Schema currentSchema) {
-
-        final ClassName dbClassName = ClassName.get("android.database.sqlite", "SQLiteDatabase");
-        final ClassName abstractMigrationClassName = ClassName.get(currentSchema.getDefaultJavaPackage() + ".helper.migrations", "AbstractMigration");
-
-        final ParameterSpec dbParamSpec = ParameterSpec.builder(dbClassName, "db").build();
-        final ParameterSpec versionParamSpec = ParameterSpec.builder(int.class, "currentVersion").build();
-
-        final MethodSpec getTargetVersionSpec = MethodSpec.methodBuilder("getTargetVersion")
-                .addModifiers(Modifier.ABSTRACT, Modifier.PROTECTED)
-                .returns(int.class)
-                .addJavadoc("@return the target (old) version which will be migrated from\n")
-                .build();
-
-        final MethodSpec getMigratedVersionSpec = MethodSpec.methodBuilder("getMigratedVersion")
-                .addModifiers(Modifier.ABSTRACT, Modifier.PROTECTED)
-                .returns(int.class)
-                .addJavadoc("@return the new version which will result from the migration being\n")
-                .build();
-
-        final MethodSpec getPreviousMigrationSpec = MethodSpec.methodBuilder("getPreviousMigration")
-                .addModifiers(Modifier.ABSTRACT, Modifier.PROTECTED)
-                .returns(abstractMigrationClassName)
-                .addJavadoc("@return instance of the previous Migration required if the current version is to old for this migration. \nNB: This will only be null if this is the tip of the chain and there are no other earlier migrations.\n")
-                .build();
-
-        final MethodSpec applyMigrationSpec = MethodSpec.methodBuilder("applyMigration")
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .returns(int.class)
-                .addParameters(Arrays.asList(dbParamSpec, versionParamSpec))
-                .addJavadoc("Apply the migration to the given database\n" +
-                        "@param $L The database to be updated\n" +
-                        "@param $L The current version before migration\n" +
-                        "@return the version after migration has been applied\n", dbParamSpec.name, versionParamSpec.name)
-                .build();
-
-        final MethodSpec prepareMigrationSpec = MethodSpec.methodBuilder("prepareMigration")
-                .addModifiers(Modifier.PROTECTED)
-                .addParameters(Arrays.asList(dbParamSpec, versionParamSpec))
-                .beginControlFlow("if($L < $L())", versionParamSpec.name, getTargetVersionSpec.name)
-                .addStatement("$L previousMigration = $L()", abstractMigrationClassName.simpleName(), getPreviousMigrationSpec.name)
-                .beginControlFlow("if(previousMigration == null)")
-                .beginControlFlow("if($L != $L())", versionParamSpec.name, getTargetVersionSpec.name)
-                .addStatement("throw new $T($S)", IllegalStateException.class, "DB old version != target version")
-                .endControlFlow()
-                .endControlFlow()
-                .beginControlFlow("if(previousMigration.$L($L,$L) != $L())", applyMigrationSpec.name, dbParamSpec.name, versionParamSpec.name, getTargetVersionSpec.name)
-                .addStatement("throw new $T($S)", IllegalStateException.class, "Error, expected migration parent to update database to appropriate version")
-                .endControlFlow()
-                .endControlFlow()
-                .build();
-
-        final TypeSpec abstractMigrationHelperSpec = TypeSpec.classBuilder(abstractMigrationClassName.simpleName())
-                .addModifiers(Modifier.ABSTRACT)
-                .addMethods(Arrays.asList(prepareMigrationSpec, applyMigrationSpec, getPreviousMigrationSpec, getMigratedVersionSpec, getTargetVersionSpec))
-                .build();
-
-        return JavaFile.builder(currentSchema.getDefaultJavaPackage() + ".helper.migrations", abstractMigrationHelperSpec)
-                .build();
     }
 
     private JavaFile createDbHelperFile(Schema currentSchema) {
@@ -125,6 +65,7 @@ class PoirotDbHelperGenerator {
                 .build();
 
         return JavaFile.builder(currentSchema.getDefaultJavaPackage() + ".helper", poirotDbHelperSpec)
+                .addFileComment(Poirot.GENERATED_FILE)
                 .build();
     }
 

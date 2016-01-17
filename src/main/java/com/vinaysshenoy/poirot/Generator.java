@@ -22,7 +22,8 @@ public class Generator {
         System.out.println("RUNNING!");
 
         final Poirot poirot = new Poirot(PACKAGE_NAME);
-        createV1Schema(poirot);
+        createV1Schema(poirot.create(1, false));
+        createV2Schema(poirot.create(2, true));
 
         try {
             poirot.generate(CURRENT_SCHEMA_DIR.toString(), OLD_SCHEMA_DIR.toString());
@@ -33,9 +34,45 @@ public class Generator {
         }
     }
 
-    private static void createV1Schema(Poirot poirot) {
+    private static void createV2Schema(Schema v2) {
 
-        final Schema v1 = poirot.create(1, true);
+        v2.enableKeepSectionsByDefault();
+
+        //Define entities
+        final Entity companyEntity = v2.addEntity("Company");
+        companyEntity.addIdProperty().autoincrement();
+        companyEntity.addStringProperty("companyId").notNull().unique().index();
+        companyEntity.addStringProperty("name").notNull();
+        companyEntity.addStringProperty("address");
+        companyEntity.addDateProperty("incorporationDate");
+
+        final Entity functionEntity = v2.addEntity("Function");
+        functionEntity.addIdProperty().autoincrement();
+        functionEntity.addStringProperty("functionCode").notNull().unique();
+        functionEntity.addStringProperty("name").notNull();
+
+        final Entity employeeEntity = v2.addEntity("Employee");
+        employeeEntity.addIdProperty().autoincrement();
+        employeeEntity.addStringProperty("employeeId").notNull().unique();
+        employeeEntity.addStringProperty("designation").notNull().index();
+        employeeEntity.addStringProperty("name").notNull();
+        employeeEntity.addIntProperty("age");
+        employeeEntity.addStringProperty("sex");
+        employeeEntity.addDateProperty("dateOfBirth");
+        employeeEntity.addDateProperty("dateOfJoining").notNull();
+
+        //Define relationships
+        final Property functionCompanyId = functionEntity.addLongProperty("companyId").notNull().getProperty();
+        functionEntity.addToOne(companyEntity, functionCompanyId);
+        companyEntity.addToMany(functionEntity, functionCompanyId);
+
+        final Property employeeFunctionId = employeeEntity.addLongProperty("functionId").notNull().getProperty();
+        employeeEntity.addToOne(functionEntity, employeeFunctionId);
+        functionEntity.addToMany(employeeEntity, employeeFunctionId);
+    }
+
+    private static void createV1Schema(Schema v1) {
+
         v1.enableKeepSectionsByDefault();
 
         //Define entities
