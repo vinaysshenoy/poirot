@@ -1,0 +1,18 @@
+group 'com.vinaysshenoy'
+version '0.9-SNAPSHOT'
+
+apply plugin: 'application'
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+mainClassName='com.vinaysshenoy.poirot.Generator'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    compile project(':library')
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
