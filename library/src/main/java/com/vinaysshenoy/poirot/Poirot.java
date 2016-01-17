@@ -81,6 +81,10 @@ public class Poirot {
                     i == mSchemas.size() - 1 ? currentSchemaOutputDirectory : olderSchemaOutputDirectory
             );
         }
+
+        final PoirotDbHelperGenerator helperGenerator = new PoirotDbHelperGenerator(mSchemas);
+        helperGenerator.generateHelper();
+
     }
 
     /**

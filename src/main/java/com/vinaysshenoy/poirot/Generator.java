@@ -35,7 +35,7 @@ public class Generator {
 
     private static void createV1Schema(Poirot poirot) {
 
-        final Schema v1 = poirot.create(1, false);
+        final Schema v1 = poirot.create(1, true);
         v1.enableKeepSectionsByDefault();
 
         //Define entities
