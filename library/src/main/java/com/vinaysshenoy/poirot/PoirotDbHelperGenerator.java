@@ -50,7 +50,7 @@ class PoirotDbHelperGenerator {
         final ClassName abstractMigrationClassName = ClassName.get(currentSchema.getDefaultJavaPackage() + ".helper.migrations", "AbstractMigration");
 
         final ParameterSpec dbParamSpec = ParameterSpec.builder(dbClassName, "db").build();
-        final ParameterSpec versionSpec = ParameterSpec.builder(int.class, "currentVersion").build();
+        final ParameterSpec versionParamSpec = ParameterSpec.builder(int.class, "currentVersion").build();
 
         final MethodSpec getTargetVersionSpec = MethodSpec.methodBuilder("getTargetVersion")
                 .addModifiers(Modifier.ABSTRACT, Modifier.PROTECTED)
@@ -73,20 +73,30 @@ class PoirotDbHelperGenerator {
         final MethodSpec applyMigrationSpec = MethodSpec.methodBuilder("applyMigration")
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .returns(int.class)
+                .addParameters(Arrays.asList(dbParamSpec, versionParamSpec))
                 .addJavadoc("Apply the migration to the given database\n" +
                         "@param $L The database to be updated\n" +
                         "@param $L The current version before migration\n" +
-                        "@return the version after migration has been applied\n", dbParamSpec.name, versionSpec.name)
+                        "@return the version after migration has been applied\n", dbParamSpec.name, versionParamSpec.name)
                 .build();
 
         final MethodSpec prepareMigrationSpec = MethodSpec.methodBuilder("prepareMigration")
                 .addModifiers(Modifier.PROTECTED)
-                .addParameters(Arrays.asList(dbParamSpec, versionSpec))
-                .beginControlFlow("if($L < $L())", versionSpec.name, getTargetVersionSpec.name)
+                .addParameters(Arrays.asList(dbParamSpec, versionParamSpec))
+                .beginControlFlow("if($L < $L())", versionParamSpec.name, getTargetVersionSpec.name)
+                .addStatement("$L previousMigration = $L()", abstractMigrationClassName.simpleName(), getPreviousMigrationSpec.name)
+                .beginControlFlow("if(previousMigration == null)")
+                .beginControlFlow("if($L != $L())", versionParamSpec.name, getTargetVersionSpec.name)
+                .addStatement("throw new $T($S)", IllegalStateException.class, "DB old version != target version")
+                .endControlFlow()
+                .endControlFlow()
+                .beginControlFlow("if(previousMigration.$L($L,$L) != $L())", applyMigrationSpec.name, dbParamSpec.name, versionParamSpec.name, getTargetVersionSpec.name)
+                .addStatement("throw new $T($S)", IllegalStateException.class, "Error, expected migration parent to update database to appropriate version")
+                .endControlFlow()
                 .endControlFlow()
                 .build();
 
-        final TypeSpec abstractMigrationHelperSpec = TypeSpec.classBuilder(abstractMigrationClassName.topLevelClassName().simpleName())
+        final TypeSpec abstractMigrationHelperSpec = TypeSpec.classBuilder(abstractMigrationClassName.simpleName())
                 .addModifiers(Modifier.ABSTRACT)
                 .addMethods(Arrays.asList(prepareMigrationSpec, applyMigrationSpec, getPreviousMigrationSpec, getMigratedVersionSpec, getTargetVersionSpec))
                 .build();
