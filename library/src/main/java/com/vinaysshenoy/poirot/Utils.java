@@ -2,6 +2,7 @@ package com.vinaysshenoy.poirot;
 
 import com.squareup.javapoet.ClassName;
 import de.greenrobot.daogenerator.Entity;
+import de.greenrobot.daogenerator.Index;
 import de.greenrobot.daogenerator.Property;
 import de.greenrobot.daogenerator.Schema;
 
@@ -39,6 +40,15 @@ public final class Utils {
         return propertyMap;
     }
 
+    public static Map<String, Index> indexMapFromEntity(Entity entity) {
+
+        final Map<String, Index> indexMap = new HashMap<>((int) (entity.getIndexes().size() * 1.33F));
+        for (Index index : entity.getIndexes()) {
+            indexMap.put(index.getName(), index);
+        }
+        return indexMap;
+    }
+
     public static AbstractList<String> entityClassList(Schema schema) {
 
         final AbstractList<String> entityClassList = new ArrayList<>(schema.getEntities().size());
@@ -57,6 +67,40 @@ public final class Utils {
         }
 
         return propertyNameList;
+    }
+
+    public static AbstractList<String> indexNameList(Entity entity) {
+
+        final AbstractList<String> indexNameList = new ArrayList<>(entity.getIndexes().size());
+        for (Index index : entity.getIndexes()) {
+            indexNameList.add(index.getName());
+        }
+
+        return indexNameList;
+    }
+
+    public static List<Index> getAddedIndexes(Entity prev, Entity cur) {
+
+        final AbstractList<String> prevIndexNameList = indexNameList(prev);
+        final AbstractList<String> curIndexNameList = indexNameList(cur);
+
+        //Remove all indexes from the current list that are present in the older list
+        curIndexNameList.removeAll(prevIndexNameList);
+        if (curIndexNameList.size() > 0) {
+            //We have entities that have been added
+            final Map<String, Index> indexMap = indexMapFromEntity(cur);
+            final Iterator<Map.Entry<String, Index>> iterator = indexMap.entrySet().iterator();
+            Map.Entry<String, Index> next;
+            while (iterator.hasNext()) {
+                next = iterator.next();
+                if (!curIndexNameList.contains(next.getKey())) {
+                    iterator.remove();
+                }
+            }
+            return new ArrayList<>(indexMap.values());
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     public static List<Entity> getAdded(Schema prev, Schema cur) {

@@ -2,6 +2,7 @@ package com.vinaysshenoy.poirot;
 
 import com.squareup.javapoet.*;
 import de.greenrobot.daogenerator.Entity;
+import de.greenrobot.daogenerator.Index;
 import de.greenrobot.daogenerator.Property;
 import de.greenrobot.daogenerator.Schema;
 
@@ -129,12 +130,35 @@ public class Migrations {
         handleAddedEntities(from, to, applyMigrationSpecBuilder);
         handleRemovedEntities(from, to, applyMigrationSpecBuilder);
         handleAddedColumns(from, to, applyMigrationSpecBuilder);
-
+        handleAddedIndexes(from, to, applyMigrationSpecBuilder);
 
         applyMigrationSpecBuilder.addStatement("return $L()", "getMigratedVersion");
 
         return applyMigrationSpecBuilder
                 .build();
+    }
+
+    private void handleAddedIndexes(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
+
+        final Map<Entity, Entity> entityMap = Utils.getCommonEntitiesAsMap(from, to);
+        for (Map.Entry<Entity, Entity> entityEntry : entityMap.entrySet()) {
+            final List<Index> addedIndexes = Utils.getAddedIndexes(entityEntry.getKey(), entityEntry.getValue());
+            System.out.println(String.format(Locale.US, "Added %d indexes when going from v%d to v%d for entity %s", addedIndexes.size(), from.getVersion(), to.getVersion(), entityEntry.getKey().getClassName()));
+            addIndexes(entityEntry.getKey(), addedIndexes, applyMigrationBuilder);
+        }
+
+    }
+
+    private void addIndexes(Entity key, List<Index> addedIndexes, MethodSpec.Builder applyMigrationBuilder) {
+
+        for (Index addedIndex : addedIndexes) {
+            applyMigrationBuilder.addStatement(
+                    "$L.execSQL($S)",
+                    mDbParameterSpec.name,
+                    String.format(Locale.US, "CREATE INDEX IF NOT EXISTS %s ON %s (\"%s\")", addedIndex.getName(), key.getTableName(), addedIndex.getProperties().get(0).getColumnName())
+            );
+        }
+
     }
 
     private void handleAddedColumns(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {

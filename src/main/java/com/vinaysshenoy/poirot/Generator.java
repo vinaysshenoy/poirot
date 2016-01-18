@@ -70,7 +70,7 @@ public class Generator {
         employeeEntity.addIntProperty("age");
         employeeEntity.addStringProperty("sex");
         employeeEntity.addDateProperty("dateOfBirth");
-        employeeEntity.addDateProperty("dateOfJoining").notNull();
+        employeeEntity.addDateProperty("dateOfJoining").index().notNull();
         employeeEntity.addStringProperty("address");
 
         //Define relationships
@@ -128,7 +128,7 @@ public class Generator {
         final Entity employeeEntity = v3.addEntity("Employee");
         employeeEntity.addIdProperty().autoincrement();
         employeeEntity.addStringProperty("employeeId").notNull().unique();
-        employeeEntity.addStringProperty("designation").notNull().index();
+        employeeEntity.addStringProperty("designation").notNull();
         employeeEntity.addStringProperty("name").notNull();
         employeeEntity.addIntProperty("age");
         employeeEntity.addStringProperty("sex");
