@@ -127,8 +127,18 @@ public class Migrations {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(int.class)
                 .addParameters(Arrays.asList(mDbParameterSpec, mCurrentVersionParameterSpec))
-                .addStatement("$L($L,$L)", "prepareMigration", mDbParameterSpec.name, mCurrentVersionParameterSpec.name);
+                .addStatement("prepareMigration($L,$L)", mDbParameterSpec.name, mCurrentVersionParameterSpec.name);
 
+        handleAddedEntities(from, to, applyMigrationSpecBuilder);
+        handleRemovedEntities(from, to, applyMigrationSpecBuilder);
+
+        applyMigrationSpecBuilder.addStatement("return $L()", "getMigratedVersion");
+
+        return applyMigrationSpecBuilder
+                .build();
+    }
+
+    private void handleAddedEntities(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
         final List<Entity> addedEntities = Utils.getAdded(from, to);
         System.out.println(String.format(Locale.US, "Added %d entities when going from v%d to v%d", addedEntities.size(), from.getVersion(), to.getVersion()));
@@ -137,26 +147,23 @@ public class Migrations {
 
                 final Property pkProperty = addedEntity.getPkProperty();
                 final String pkColumnDef = String.format(Locale.US, "\"%s\" %s %s", pkProperty.getColumnName(), pkProperty.getColumnType(), pkProperty.getConstraints());
-                applyMigrationSpecBuilder.addStatement("$L.execSQL($S)",
+                applyMigrationBuilder.addStatement("$L.execSQL($S)",
                         mDbParameterSpec.name,
                         String.format(Locale.US, "CREATE TABLE \"%s\" (%s);", addedEntity.getTableName(), pkColumnDef)
                 );
             }
         }
+    }
+
+    private void handleRemovedEntities(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
         final List<Entity> removedEntities = Utils.getRemoved(from, to);
         System.out.println(String.format(Locale.US, "Removed %d entities when going from v%d to v%d", removedEntities.size(), from.getVersion(), to.getVersion()));
         if (removedEntities.size() > 0) {
             for (Entity removedEntity : removedEntities) {
-                applyMigrationSpecBuilder.addStatement("$L.execSQL($S)", mDbParameterSpec.name, String.format(Locale.US, "DROP TABLE IF EXISTS \"%s\"", removedEntity.getTableName()));
+                applyMigrationBuilder.addStatement("$L.execSQL($S)", mDbParameterSpec.name, String.format(Locale.US, "DROP TABLE IF EXISTS \"%s\"", removedEntity.getTableName()));
             }
         }
-
-
-        applyMigrationSpecBuilder.addStatement("return $L()", "getMigratedVersion");
-
-        return applyMigrationSpecBuilder
-                .build();
     }
 
     private JavaFile createAbstractMigrationFile(Schema currentSchema) {
