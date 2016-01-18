@@ -1,6 +1,8 @@
 # poirot
 Adds automatic migration support for Greendao.
 
+## Pre-Alpha and not thoroughly tested. Do NOT use in production unless you like to live on the wild side!
+
 ### API Usage coming soon. For now, please check the [Dao Generator](https://github.com/vinaysshenoy/poirot/blob/master/src/main/java/com/vinaysshenoy/poirot/Generator.java) file for more info.
 
 * The generator file will generate a `PoirotDbHelper.java` source file that you can drop in place of GreenDao's Open Helper and it will take care of automatically migrating your database for you.
