@@ -9,6 +9,7 @@ import de.greenrobot.daogenerator.Schema;
 import javax.lang.model.element.Modifier;
 import java.util.*;
 
+
 /**
  * Created by vinaysshenoy on 17/01/16.
  */
@@ -143,7 +144,9 @@ public class Migrations {
         final Map<Entity, Entity> entityMap = Utils.getCommonEntitiesAsMap(from, to);
         for (Map.Entry<Entity, Entity> entityEntry : entityMap.entrySet()) {
             final List<Index> addedIndexes = Utils.getAddedIndexes(entityEntry.getKey(), entityEntry.getValue());
-            System.out.println(String.format(Locale.US, "Added %d indexes when going from v%d to v%d for entity %s", addedIndexes.size(), from.getVersion(), to.getVersion(), entityEntry.getKey().getClassName()));
+            if (!addedIndexes.isEmpty()) {
+                System.out.println(String.format(Locale.US, "Added %d indexes when going from v%d to v%d for entity %s", addedIndexes.size(), from.getVersion(), to.getVersion(), entityEntry.getKey().getClassName()));
+            }
             addIndexes(entityEntry.getKey(), addedIndexes, applyMigrationBuilder);
         }
 
@@ -166,7 +169,9 @@ public class Migrations {
         final Map<Entity, Entity> entityMap = Utils.getCommonEntitiesAsMap(from, to);
         for (Map.Entry<Entity, Entity> entityEntry : entityMap.entrySet()) {
             final List<Property> addedProperties = Utils.getAddedProperties(entityEntry.getKey(), entityEntry.getValue());
-            System.out.println(String.format(Locale.US, "Added %d properties when going from v%d to v%d for entity %s", addedProperties.size(), from.getVersion(), to.getVersion(), entityEntry.getKey().getClassName()));
+            if (!addedProperties.isEmpty()) {
+                System.out.println(String.format(Locale.US, "Added %d properties when going from v%d to v%d for entity %s", addedProperties.size(), from.getVersion(), to.getVersion(), entityEntry.getKey().getClassName()));
+            }
             addColumns(entityEntry.getKey(), addedProperties, applyMigrationBuilder);
         }
     }
@@ -183,7 +188,9 @@ public class Migrations {
     private void handleAddedEntities(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
         final List<Entity> addedEntities = Utils.getAdded(from, to);
-        System.out.println(String.format(Locale.US, "Added %d entities when going from v%d to v%d", addedEntities.size(), from.getVersion(), to.getVersion()));
+        if (!addedEntities.isEmpty()) {
+            System.out.println(String.format(Locale.US, "Added %d entities when going from v%d to v%d", addedEntities.size(), from.getVersion(), to.getVersion()));
+        }
         if (addedEntities.size() > 0) {
             for (Entity addedEntity : addedEntities) {
 
@@ -199,7 +206,9 @@ public class Migrations {
     private void handleRemovedEntities(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
         final List<Entity> removedEntities = Utils.getRemoved(from, to);
-        System.out.println(String.format(Locale.US, "Removed %d entities when going from v%d to v%d", removedEntities.size(), from.getVersion(), to.getVersion()));
+        if (!removedEntities.isEmpty()) {
+            System.out.println(String.format(Locale.US, "Removed %d entities when going from v%d to v%d", removedEntities.size(), from.getVersion(), to.getVersion()));
+        }
         if (removedEntities.size() > 0) {
             for (Entity removedEntity : removedEntities) {
                 applyMigrationBuilder.addStatement("$L.execSQL($S)", mDbParameterSpec.name, String.format(Locale.US, "DROP TABLE IF EXISTS \"%s\"", removedEntity.getTableName()));
