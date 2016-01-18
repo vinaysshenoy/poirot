@@ -3,8 +3,9 @@ package com.vinaysshenoy.poirot;
 import de.greenrobot.daogenerator.DaoGenerator;
 import de.greenrobot.daogenerator.Schema;
 
-import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by vinaysshenoy on 16/01/16.
@@ -13,16 +14,13 @@ public class Poirot {
 
     public static final String GENERATED_FILE = "GENERATED FILE! DO NOT MODIFY!";
 
-    private static final Comparator<Schema> SCHEMA_COMPARATOR = new Comparator<Schema>() {
-        @Override
-        public int compare(Schema lhs, Schema rhs) {
-            return lhs.getVersion() - rhs.getVersion();
-        }
-    };
-
     private final List<Schema> mSchemas;
 
     private final String mPackageName;
+
+    private int mLastVersion;
+
+    private int mCurrentVersion;
 
     /**
      * Create an instance of {@link Poirot} with the package name for the schemas.
@@ -35,6 +33,8 @@ public class Poirot {
         }
         mPackageName = packageName;
         mSchemas = new ArrayList<>();
+        mLastVersion = 0;
+        mCurrentVersion = 0;
     }
 
     /**
@@ -45,6 +45,21 @@ public class Poirot {
      */
     public Schema create(int version, boolean isCurrent) {
 
+        if (version < 1) {
+            throw new IllegalArgumentException("Cannot generate schemas with version < 1");
+        }
+
+        if (isCurrent && mCurrentVersion > version) {
+            throw new IllegalArgumentException(version + " cannot be greater than already set current version");
+        }
+
+        if (mLastVersion >= version) {
+            throw new IllegalArgumentException("Version numbers must always be increasing");
+        }
+        if (isCurrent) {
+            mCurrentVersion = version;
+        }
+        mLastVersion = version;
         final String schemaPackage = isCurrent ? mPackageName : String.format(Locale.US, "%s.v%d", mPackageName, version);
         final Schema schema = new Schema(version, schemaPackage);
         mSchemas.add(schema);
@@ -71,9 +86,6 @@ public class Poirot {
             throw new IllegalStateException("At least one schema must be added!");
         }
 
-        Collections.sort(mSchemas, SCHEMA_COMPARATOR);
-        validateSchemas();
-
         Utils.ensureDirectory(currentSchemaOutputDirectory, olderSchemaOutputDirectory);
 
         final DaoGenerator generator = new DaoGenerator();
@@ -87,28 +99,6 @@ public class Poirot {
         final PoirotDbHelperGenerator helperGenerator = new PoirotDbHelperGenerator(mSchemas);
         helperGenerator.generateHelper(currentSchemaOutputDirectory);
 
-    }
-
-    /**
-     * Validates that there is only one schema of a particular version
-     */
-    private void validateSchemas() throws IllegalStateException {
-
-        final HashSet<Integer> versions = new HashSet<>((int) (mSchemas.size() * 1.33F));
-
-        if (mSchemas.get(0).getVersion() < 1) {
-            throw new IllegalStateException("Cannot generate schemas with version < 1");
-        }
-        for (Schema schema : mSchemas) {
-
-            int versionNumber = schema.getVersion();
-            if (versions.contains(versionNumber)) {
-                throw new IllegalStateException(
-                        "Unable to process schema versions, multiple instances with version number : "
-                                + versionNumber);
-            }
-            versions.add(versionNumber);
-        }
     }
 
     private static boolean isEmpty(String string) {
