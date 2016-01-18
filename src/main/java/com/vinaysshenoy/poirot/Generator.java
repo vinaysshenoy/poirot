@@ -174,7 +174,7 @@ public class Generator {
         //Define entities
         final Entity companyEntity = v2.addEntity("Company");
         companyEntity.addIdProperty().autoincrement();
-        companyEntity.addStringProperty("companyId").notNull().unique().index();
+        companyEntity.addStringProperty("companyCode").notNull().unique().index();
         companyEntity.addStringProperty("name").notNull();
         companyEntity.addStringProperty("address");
         companyEntity.addDateProperty("incorporationDate");
@@ -216,7 +216,7 @@ public class Generator {
         //Define entities
         final Entity companyEntity = v1.addEntity("Company");
         companyEntity.addIdProperty().autoincrement();
-        companyEntity.addStringProperty("companyId").notNull().unique().index();
+        companyEntity.addStringProperty("companyCode").notNull().unique().index();
         companyEntity.addStringProperty("name").notNull();
         companyEntity.addStringProperty("address");
 
