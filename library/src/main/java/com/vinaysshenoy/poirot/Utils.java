@@ -103,6 +103,30 @@ public final class Utils {
         }
     }
 
+    public static List<Index> getRemovedIndexes(Entity prev, Entity cur) {
+
+        final AbstractList<String> prevIndexNameList = indexNameList(prev);
+        final AbstractList<String> curIndexNameList = indexNameList(cur);
+
+        //Remove all indexes from the current list that are present in the older list
+        prevIndexNameList.removeAll(curIndexNameList);
+        if (prevIndexNameList.size() > 0) {
+            //We have entities that have been added
+            final Map<String, Index> indexMap = indexMapFromEntity(prev);
+            final Iterator<Map.Entry<String, Index>> iterator = indexMap.entrySet().iterator();
+            Map.Entry<String, Index> next;
+            while (iterator.hasNext()) {
+                next = iterator.next();
+                if (!prevIndexNameList.contains(next.getKey())) {
+                    iterator.remove();
+                }
+            }
+            return new ArrayList<>(indexMap.values());
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
     public static List<Entity> getAdded(Schema prev, Schema cur) {
 
         final AbstractList<String> prevEntityClassList = entityClassList(prev);
@@ -157,15 +181,15 @@ public final class Utils {
         final AbstractList<String> curPropertyNameList = propertyNameList(cur);
 
         //Remove all properties from the current list that are present in the older list
-        curPropertyNameList.removeAll(prevPropertyNameList);
-        if (curPropertyNameList.size() > 0) {
+        prevPropertyNameList.removeAll(curPropertyNameList);
+        if (prevPropertyNameList.size() > 0) {
             //We have entities that have been added
-            final Map<String, Property> propertyMap = propertyMapFromEntity(cur);
+            final Map<String, Property> propertyMap = propertyMapFromEntity(prev);
             final Iterator<Map.Entry<String, Property>> iterator = propertyMap.entrySet().iterator();
             Map.Entry<String, Property> next;
             while (iterator.hasNext()) {
                 next = iterator.next();
-                if (curPropertyNameList.contains(next.getKey())) {
+                if (!prevPropertyNameList.contains(next.getKey())) {
                     iterator.remove();
                 }
             }

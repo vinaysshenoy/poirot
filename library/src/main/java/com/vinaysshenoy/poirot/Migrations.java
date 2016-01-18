@@ -132,11 +132,36 @@ public class Migrations {
         handleRemovedEntities(from, to, applyMigrationSpecBuilder);
         handleAddedColumns(from, to, applyMigrationSpecBuilder);
         handleAddedIndexes(from, to, applyMigrationSpecBuilder);
+        handleRemovedIndexes(from, to, applyMigrationSpecBuilder);
 
         applyMigrationSpecBuilder.addStatement("return $L()", "getMigratedVersion");
 
         return applyMigrationSpecBuilder
                 .build();
+    }
+
+    private void handleRemovedIndexes(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
+
+        final Map<Entity, Entity> entityMap = Utils.getCommonEntitiesAsMap(from, to);
+        for (Map.Entry<Entity, Entity> entityEntry : entityMap.entrySet()) {
+            final List<Index> removedIndexes = Utils.getRemovedIndexes(entityEntry.getKey(), entityEntry.getValue());
+            if (!removedIndexes.isEmpty()) {
+                System.out.println(String.format(Locale.US, "Removed %d indexes when going from v%d to v%d for entity %s", removedIndexes.size(), from.getVersion(), to.getVersion(), entityEntry.getKey().getClassName()));
+            }
+            removeIndexes(entityEntry.getKey(), removedIndexes, applyMigrationBuilder);
+        }
+    }
+
+    private void removeIndexes(Entity entity, List<Index> removedIndexes, MethodSpec.Builder applyMigrationBuilder) {
+
+        for (Index removedIndex : removedIndexes) {
+            applyMigrationBuilder.addStatement(
+                    "$L.execSQL($S)",
+                    mDbParameterSpec.name,
+                    String.format(Locale.US, "DROP INDEX IF EXISTS %s", removedIndex.getName())
+            );
+        }
+
     }
 
     private void handleAddedIndexes(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
@@ -147,18 +172,18 @@ public class Migrations {
             if (!addedIndexes.isEmpty()) {
                 System.out.println(String.format(Locale.US, "Added %d indexes when going from v%d to v%d for entity %s", addedIndexes.size(), from.getVersion(), to.getVersion(), entityEntry.getKey().getClassName()));
             }
-            addIndexes(entityEntry.getKey(), addedIndexes, applyMigrationBuilder);
+            addIndexes(entityEntry.getValue(), addedIndexes, applyMigrationBuilder);
         }
 
     }
 
-    private void addIndexes(Entity key, List<Index> addedIndexes, MethodSpec.Builder applyMigrationBuilder) {
+    private void addIndexes(Entity entity, List<Index> addedIndexes, MethodSpec.Builder applyMigrationBuilder) {
 
         for (Index addedIndex : addedIndexes) {
             applyMigrationBuilder.addStatement(
                     "$L.execSQL($S)",
                     mDbParameterSpec.name,
-                    String.format(Locale.US, "CREATE INDEX IF NOT EXISTS %s ON %s (\"%s\")", addedIndex.getName(), key.getTableName(), addedIndex.getProperties().get(0).getColumnName())
+                    String.format(Locale.US, "CREATE INDEX IF NOT EXISTS %s ON %s (\"%s\")", addedIndex.getName(), entity.getTableName(), addedIndex.getProperties().get(0).getColumnName())
             );
         }
 
@@ -199,6 +224,7 @@ public class Migrations {
                         String.format(Locale.US, "CREATE TABLE IF NOT EXISTS \"%s\" (%s)", addedEntity.getTableName(), Utils.getPropertySqlDef(addedEntity.getPkProperty()))
                 );
                 addColumns(addedEntity, Utils.entityPropertiesWithoutPrimaryKey(addedEntity), applyMigrationBuilder);
+                addIndexes(addedEntity, addedEntity.getIndexes(), applyMigrationBuilder);
             }
         }
     }
