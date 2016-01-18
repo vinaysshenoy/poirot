@@ -127,10 +127,14 @@ public final class Utils {
         }
     }
 
-    public static List<Entity> getAdded(Schema prev, Schema cur) {
+    public static List<Entity> getAdded(Schema prev, Schema cur, EntityRenameDesc entityRenameDesc) {
 
         final AbstractList<String> prevEntityClassList = entityClassList(prev);
         final AbstractList<String> curEntityClassList = entityClassList(cur);
+
+        if (entityRenameDesc != null) {
+            mapOldNamesToNew(prevEntityClassList, entityRenameDesc);
+        }
 
         //Remove all entity classes from the current list that are present in the older list
         curEntityClassList.removeAll(prevEntityClassList);

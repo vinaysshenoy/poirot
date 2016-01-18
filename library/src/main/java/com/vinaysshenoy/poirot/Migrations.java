@@ -236,7 +236,7 @@ public class Migrations {
 
     private void handleAddedEntities(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
-        final List<Entity> addedEntities = Utils.getAdded(from, to);
+        final List<Entity> addedEntities = Utils.getAdded(from, to, resolveEntityRenameDescription(from, to));
         if (!addedEntities.isEmpty()) {
             System.out.println(String.format(Locale.US, "Added %d entities when going from v%d to v%d", addedEntities.size(), from.getVersion(), to.getVersion()));
         }
