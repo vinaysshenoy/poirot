@@ -6,10 +6,7 @@ import de.greenrobot.daogenerator.Property;
 import de.greenrobot.daogenerator.Schema;
 
 import javax.lang.model.element.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 /**
  * Created by vinaysshenoy on 17/01/16.
@@ -131,11 +128,31 @@ public class Migrations {
 
         handleAddedEntities(from, to, applyMigrationSpecBuilder);
         handleRemovedEntities(from, to, applyMigrationSpecBuilder);
+        handleAddedColumns(from, to, applyMigrationSpecBuilder);
 
         applyMigrationSpecBuilder.addStatement("return $L()", "getMigratedVersion");
 
         return applyMigrationSpecBuilder
                 .build();
+    }
+
+    private void handleAddedColumns(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
+
+        final Map<Entity, Entity> entityMap = Utils.getCommonEntitiesAsMap(from, to);
+        for (Map.Entry<Entity, Entity> entityEntry : entityMap.entrySet()) {
+            final List<Property> addedProperties = Utils.getAddedProperties(entityEntry.getKey(), entityEntry.getValue());
+            System.out.println(String.format(Locale.US, "Added %d properties when going from v%d to v%d for entity %s", addedProperties.size(), from.getVersion(), to.getVersion(), entityEntry.getKey().getClassName()));
+            addColumns(entityEntry.getKey(), addedProperties, applyMigrationBuilder);
+        }
+    }
+
+    private void addColumns(Entity entity, List<Property> properties, MethodSpec.Builder applyMigrationBuilder) {
+        for (Property property : properties) {
+            applyMigrationBuilder.addStatement(
+                    "$L.execSQL($S)",
+                    mDbParameterSpec.name,
+                    String.format(Locale.US, "ALTER TABLE \"%s\" ADD COLUMN %s", entity.getTableName(), Utils.getPropertySqlDef(property)));
+        }
     }
 
     private void handleAddedEntities(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
@@ -145,12 +162,11 @@ public class Migrations {
         if (addedEntities.size() > 0) {
             for (Entity addedEntity : addedEntities) {
 
-                final Property pkProperty = addedEntity.getPkProperty();
-                final String pkColumnDef = String.format(Locale.US, "\"%s\" %s %s", pkProperty.getColumnName(), pkProperty.getColumnType(), pkProperty.getConstraints());
                 applyMigrationBuilder.addStatement("$L.execSQL($S)",
                         mDbParameterSpec.name,
-                        String.format(Locale.US, "CREATE TABLE \"%s\" (%s);", addedEntity.getTableName(), pkColumnDef)
+                        String.format(Locale.US, "CREATE TABLE \"%s\" (%s)", addedEntity.getTableName(), Utils.getPropertySqlDef(addedEntity.getPkProperty()))
                 );
+                addColumns(addedEntity, Utils.entityPropertiesWithoutPrimaryKey(addedEntity), applyMigrationBuilder);
             }
         }
     }
