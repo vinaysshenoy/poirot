@@ -107,6 +107,30 @@ public final class Utils {
         }
     }
 
+    public static List<Property> getRemovedProperties(Entity prev, Entity cur) {
+
+        final AbstractList<String> prevPropertyNameList = propertyNameList(prev);
+        final AbstractList<String> curPropertyNameList = propertyNameList(cur);
+
+        //Remove all properties from the current list that are present in the older list
+        curPropertyNameList.removeAll(prevPropertyNameList);
+        if (curPropertyNameList.size() > 0) {
+            //We have entities that have been added
+            final Map<String, Property> propertyMap = propertyMapFromEntity(cur);
+            final Iterator<Map.Entry<String, Property>> iterator = propertyMap.entrySet().iterator();
+            Map.Entry<String, Property> next;
+            while (iterator.hasNext()) {
+                next = iterator.next();
+                if (curPropertyNameList.contains(next.getKey())) {
+                    iterator.remove();
+                }
+            }
+            return new ArrayList<>(propertyMap.values());
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
 
     public static Map<Entity, Entity> getCommonEntitiesAsMap(Schema prev, Schema cur) {
 

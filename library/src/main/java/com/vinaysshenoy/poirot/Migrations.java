@@ -130,6 +130,7 @@ public class Migrations {
         handleRemovedEntities(from, to, applyMigrationSpecBuilder);
         handleAddedColumns(from, to, applyMigrationSpecBuilder);
 
+
         applyMigrationSpecBuilder.addStatement("return $L()", "getMigratedVersion");
 
         return applyMigrationSpecBuilder
@@ -164,7 +165,7 @@ public class Migrations {
 
                 applyMigrationBuilder.addStatement("$L.execSQL($S)",
                         mDbParameterSpec.name,
-                        String.format(Locale.US, "CREATE TABLE \"%s\" (%s)", addedEntity.getTableName(), Utils.getPropertySqlDef(addedEntity.getPkProperty()))
+                        String.format(Locale.US, "CREATE TABLE IF NOT EXISTS \"%s\" (%s)", addedEntity.getTableName(), Utils.getPropertySqlDef(addedEntity.getPkProperty()))
                 );
                 addColumns(addedEntity, Utils.entityPropertiesWithoutPrimaryKey(addedEntity), applyMigrationBuilder);
             }
