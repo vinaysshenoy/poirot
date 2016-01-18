@@ -17,17 +17,21 @@ class PoirotDbHelperGenerator {
 
     private final List<Schema> mSchemas;
 
+    private final List<EntityRenameDesc> mEntityRenameDescList;
+
     /**
      * Create a {@link PoirotDbHelperGenerator} instance with a list of schemas
      *
-     * @param schemas A non-{@code null} and non-empty list of schemas for which to generate the helper
+     * @param schemas           A non-{@code null} and non-empty list of schemas for which to generate the helper
+     * @param entityRenameDescs A list of how entities have been renamed when moving from one schema to the next
      */
-    public PoirotDbHelperGenerator(List<Schema> schemas) {
+    public PoirotDbHelperGenerator(List<Schema> schemas, List<EntityRenameDesc> entityRenameDescs) {
 
         if (schemas == null || schemas.isEmpty()) {
             throw new IllegalArgumentException("Schemas cannot be null or empty");
         }
         this.mSchemas = new ArrayList<>(schemas);
+        this.mEntityRenameDescList = entityRenameDescs;
     }
 
     public void generateHelper(String outputDirectory) throws IOException {
@@ -36,7 +40,7 @@ class PoirotDbHelperGenerator {
 
         final List<JavaFile> filesToCreate = new ArrayList<>();
 
-        final Migrations migrations = new Migrations(mSchemas);
+        final Migrations migrations = new Migrations(mSchemas, mEntityRenameDescList);
         filesToCreate.addAll(migrations.createMigrations());
         filesToCreate.add(createDbHelperFile(currentSchema));
 

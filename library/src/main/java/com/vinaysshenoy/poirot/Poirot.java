@@ -3,7 +3,9 @@ package com.vinaysshenoy.poirot;
 import de.greenrobot.daogenerator.DaoGenerator;
 import de.greenrobot.daogenerator.Schema;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by vinaysshenoy on 16/01/16.
@@ -11,6 +13,8 @@ import java.util.*;
 public class Poirot {
 
     public static final String GENERATED_FILE = "GENERATED FILE! DO NOT MODIFY!";
+
+    private static final EntityRenameDesc.Builder DEFAULT_ENTITY_RENAME_DESC_BUILDER = new EntityRenameDesc.Builder();
 
     private final List<Schema> mSchemas;
 
@@ -22,7 +26,7 @@ public class Poirot {
 
     private int mCurrentVersion;
 
-    private final Map<Schema, EntityRenameDesc> mEntityRenameMap;
+    private final List<EntityRenameDesc> mEntityRenameDescList;
 
     /**
      * Create an instance of {@link Poirot} with the package name for the schemas.
@@ -38,7 +42,7 @@ public class Poirot {
         mLastVersion = 0;
         mCurrentSet = false;
         mCurrentVersion = 0;
-        mEntityRenameMap = new HashMap<>();
+        mEntityRenameDescList = new ArrayList<>();
     }
 
     /**
@@ -48,6 +52,17 @@ public class Poirot {
      * @param isCurrent Whether the schema is the current one or not
      */
     public Schema create(int version, boolean isCurrent) {
+        return create(version, isCurrent, null);
+    }
+
+    /**
+     * Add a {@link Schema} to the list of schemas to be generated
+     *
+     * @param version          The schema version. Versions should always be increasing, with the current schema having the highest version
+     * @param isCurrent        Whether the schema is the current one or not
+     * @param entityRenameDesc A description of which entities have been renamed from the previous schema
+     */
+    public Schema create(int version, boolean isCurrent, EntityRenameDesc entityRenameDesc) {
 
         if (version < 1) {
             throw new IllegalArgumentException("Cannot generate schemas with version < 1");
@@ -64,10 +79,15 @@ public class Poirot {
             mCurrentSet = true;
             mCurrentVersion = version;
         }
-        mLastVersion = version;
+
         final String schemaPackage = isCurrent ? mPackageName : String.format(Locale.US, "%s.v%d", mPackageName, version);
         final Schema schema = new Schema(version, schemaPackage);
         mSchemas.add(schema);
+        entityRenameDesc = (entityRenameDesc == null) ? DEFAULT_ENTITY_RENAME_DESC_BUILDER.reset().build() : entityRenameDesc;
+        entityRenameDesc.setFromVersion(mLastVersion);
+        entityRenameDesc.setToVersion(version);
+        mEntityRenameDescList.add(entityRenameDesc);
+        mLastVersion = version;
         return schema;
     }
 
@@ -101,7 +121,7 @@ public class Poirot {
             );
         }
 
-        final PoirotDbHelperGenerator helperGenerator = new PoirotDbHelperGenerator(mSchemas);
+        final PoirotDbHelperGenerator helperGenerator = new PoirotDbHelperGenerator(mSchemas, mEntityRenameDescList);
         helperGenerator.generateHelper(currentSchemaOutputDirectory);
 
     }

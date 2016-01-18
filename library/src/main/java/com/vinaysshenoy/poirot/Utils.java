@@ -223,10 +223,87 @@ public final class Utils {
         }
     }
 
-    public static List<Entity> getRemoved(Schema prev, Schema cur) {
+    public static void mapNewNamesToOld(AbstractList<String> namesList, EntityRenameDesc entityRenameDesc) {
+
+        final ListIterator<String> entityClassIterator = namesList.listIterator();
+        String newEntityName, oldEntityName;
+        while (entityClassIterator.hasNext()) {
+            newEntityName = entityClassIterator.next();
+            oldEntityName = entityRenameDesc.getOriginalName(newEntityName);
+
+            if (oldEntityName != null) {
+                entityClassIterator.set(oldEntityName);
+            }
+        }
+    }
+
+    public static void mapOldNamesToNew(AbstractList<String> namesList, EntityRenameDesc entityRenameDesc) {
+
+        final ListIterator<String> entityClassIterator = namesList.listIterator();
+        String newEntityName, oldEntityName;
+        while (entityClassIterator.hasNext()) {
+            oldEntityName = entityClassIterator.next();
+            newEntityName = entityRenameDesc.getChangedName(oldEntityName);
+
+            if (newEntityName != null) {
+                entityClassIterator.set(newEntityName);
+            }
+        }
+    }
+
+    public static Map<Entity, Entity> getRenamed(Schema prev, Schema cur, EntityRenameDesc entityRenameDesc) {
+
+        final AbstractList<String> prevEntityClassList = entityClassList(prev);
+
+        final Iterator<String> nameIterator = prevEntityClassList.iterator();
+        String changedName;
+        while (nameIterator.hasNext()) {
+
+            changedName = entityRenameDesc.getChangedName(nameIterator.next());
+            if (changedName == null) {
+                nameIterator.remove();
+            }
+        }
+
+        if (prevEntityClassList.size() > 0) {
+            //We have entities that have been renamed
+            final Map<String, Entity> prevEntityMap = entityMapFromSchema(prev);
+            final Map<String, Entity> curEntityMap = entityMapFromSchema(cur);
+            final Iterator<Map.Entry<String, Entity>> iterator = prevEntityMap.entrySet().iterator();
+            Map.Entry<String, Entity> next;
+            while (iterator.hasNext()) {
+                next = iterator.next();
+                if (!prevEntityClassList.contains(next.getKey())) {
+                    iterator.remove();
+                }
+            }
+            List<Entity> oldEntities = new ArrayList<>(prevEntityMap.values());
+            final Map<Entity, Entity> renamedEntityMap = new HashMap<>();
+            Entity newEntity;
+
+            for (Entity oldEntity : oldEntities) {
+                newEntity = curEntityMap.get(entityRenameDesc.getChangedName(oldEntity.getClassName()));
+                if (newEntity != null) {
+                    renamedEntityMap.put(oldEntity, newEntity);
+                }
+            }
+            return renamedEntityMap;
+
+        } else {
+            return Collections.emptyMap();
+        }
+
+    }
+
+    public static List<Entity> getRemoved(Schema prev, Schema cur, EntityRenameDesc entityRenameDesc) {
 
         final AbstractList<String> prevEntityClassList = entityClassList(prev);
         final AbstractList<String> curEntityClassList = entityClassList(cur);
+
+        //Map new names to older names
+        if (entityRenameDesc != null) {
+            mapNewNamesToOld(curEntityClassList, entityRenameDesc);
+        }
 
         //Remove all entity classes from the current list that are present in the older list
         prevEntityClassList.removeAll(curEntityClassList);

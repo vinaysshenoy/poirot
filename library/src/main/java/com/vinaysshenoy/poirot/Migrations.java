@@ -29,8 +29,11 @@ public class Migrations {
 
     private final ParameterSpec mCurrentVersionParameterSpec;
 
-    public Migrations(List<Schema> schemas) {
+    private List<EntityRenameDesc> mEntityRenameDescList;
+
+    public Migrations(List<Schema> schemas, List<EntityRenameDesc> entityRenameDescList) {
         this.mSchemas = schemas;
+        this.mEntityRenameDescList = entityRenameDescList;
         mCurrentSchema = schemas.get(schemas.size() - 1);
         mPackageName = mCurrentSchema.getDefaultJavaPackage() + ".helper.migrations";
         mAbstractMigrationClassName = ClassName.get(mPackageName, "AbstractMigration");
@@ -129,6 +132,7 @@ public class Migrations {
                 .addStatement("prepareMigration($L,$L)", mDbParameterSpec.name, mCurrentVersionParameterSpec.name);
 
         handleAddedEntities(from, to, applyMigrationSpecBuilder);
+        handleRenamedEntities(from, to, applyMigrationSpecBuilder);
         handleRemovedEntities(from, to, applyMigrationSpecBuilder);
         handleAddedColumns(from, to, applyMigrationSpecBuilder);
         handleAddedIndexes(from, to, applyMigrationSpecBuilder);
@@ -138,6 +142,26 @@ public class Migrations {
 
         return applyMigrationSpecBuilder
                 .build();
+    }
+
+    private void handleRenamedEntities(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
+
+        final EntityRenameDesc entityRenameDesc = resolveEntityRenameDescription(from, to);
+        if (entityRenameDesc != null) {
+
+            final Map<Entity, Entity> renamedEntities = Utils.getRenamed(from, to, entityRenameDesc);
+            if (!renamedEntities.isEmpty()) {
+                System.out.println(String.format(Locale.US, "Rename %d entities when going from v%d to v%d", renamedEntities.size(), from.getVersion(), to.getVersion()));
+            }
+            for (Entity entity : renamedEntities.keySet()) {
+                applyMigrationBuilder.addStatement(
+                        "$L.execSQL($S)",
+                        mDbParameterSpec.name,
+                        String.format(Locale.US, "ALTER TABLE %s RENAME TO %s", entity.getTableName(), renamedEntities.get(entity).getTableName())
+                );
+            }
+
+        }
     }
 
     private void handleRemovedIndexes(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
@@ -231,7 +255,7 @@ public class Migrations {
 
     private void handleRemovedEntities(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
-        final List<Entity> removedEntities = Utils.getRemoved(from, to);
+        final List<Entity> removedEntities = Utils.getRemoved(from, to, resolveEntityRenameDescription(from, to));
         if (!removedEntities.isEmpty()) {
             System.out.println(String.format(Locale.US, "Removed %d entities when going from v%d to v%d", removedEntities.size(), from.getVersion(), to.getVersion()));
         }
@@ -299,6 +323,20 @@ public class Migrations {
         return JavaFile.builder(currentSchema.getDefaultJavaPackage() + ".helper.migrations", abstractMigrationHelperSpec)
                 .addFileComment(Poirot.GENERATED_FILE)
                 .build();
+    }
+
+    private EntityRenameDesc resolveEntityRenameDescription(Schema from, Schema to) {
+
+        final int fromVersion = from.getVersion();
+        final int toVersion = to.getVersion();
+
+        for (EntityRenameDesc entityRenameDesc : mEntityRenameDescList) {
+            if (fromVersion == entityRenameDesc.getFromVersion() && toVersion == entityRenameDesc.getToVersion()) {
+                return entityRenameDesc;
+            }
+        }
+
+        return null;
     }
 
 }

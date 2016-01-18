@@ -27,6 +27,29 @@ public class EntityRenameDesc {
         this.mToVersion = toVersion;
     }
 
+    public int getFromVersion() {
+        return mFromVersion;
+    }
+
+    public int getToVersion() {
+        return mToVersion;
+    }
+
+    public String getChangedName(String original) {
+        return mNameMap.get(original);
+    }
+
+    public String getOriginalName(String changed) {
+
+        for (Map.Entry<String, String> entry : mNameMap.entrySet()) {
+            if (changed.equals(entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+
+        return null;
+    }
+
     public static final class Builder {
 
         public final Map<String, String> nameMaps;
@@ -45,8 +68,9 @@ public class EntityRenameDesc {
             return new EntityRenameDesc(this);
         }
 
-        public void reset() {
+        public Builder reset() {
             nameMaps.clear();
+            return this;
         }
     }
 

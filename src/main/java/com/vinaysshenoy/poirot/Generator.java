@@ -21,11 +21,28 @@ public class Generator {
 
         System.out.println("RUNNING!");
 
+        final EntityRenameDesc.Builder entityRenameDescBuilder = new EntityRenameDesc.Builder();
         final Poirot poirot = new Poirot(PACKAGE_NAME);
         createV1Schema(poirot.create(1, false));
         createV2Schema(poirot.create(2, false));
         createV3Schema(poirot.create(3, false));
-        createV4Schema(poirot.create(4, true));
+        createV4Schema(poirot.create(
+                4,
+                false,
+                entityRenameDescBuilder
+                        .reset()
+                        .map("Function", "Department")
+                        .build()
+        ));
+        createV5Schema(poirot.create(
+                5,
+                true,
+                entityRenameDescBuilder
+                .reset()
+                .map("Department", "Function")
+                .map("Company", "Organization")
+                .build()
+        ));
 
         try {
             poirot.generate(CURRENT_SCHEMA_DIR.toString(), OLD_SCHEMA_DIR.toString());
@@ -34,6 +51,69 @@ public class Generator {
             System.out.println("Could not generate entities!");
             e.printStackTrace();
         }
+    }
+
+    private static void createV5Schema(Schema v5) {
+
+        v5.enableKeepSectionsByDefault();
+
+        //Define entities
+        final Entity companyEntity = v5.addEntity("Organization");
+        companyEntity.addIdProperty().autoincrement();
+        companyEntity.addStringProperty("companyCode").notNull().unique().index();
+        companyEntity.addStringProperty("name").notNull();
+        companyEntity.addDateProperty("incorporationDate");
+
+        final Entity branchEntity = v5.addEntity("Branch");
+        branchEntity.addIdProperty().autoincrement();
+        branchEntity.addStringProperty("branchCode").notNull().unique().index();
+        branchEntity.addStringProperty("address");
+
+        final Entity functionEntity = v5.addEntity("Function");
+        functionEntity.addIdProperty().autoincrement();
+        functionEntity.addStringProperty("functionCode").notNull().unique();
+        functionEntity.addStringProperty("name");
+
+        final Entity teamEntity = v5.addEntity("Team");
+        teamEntity.addIdProperty().autoincrement();
+        teamEntity.addStringProperty("teamCode").notNull();
+        teamEntity.addStringProperty("name");
+
+        final Entity employeeEntity = v5.addEntity("Employee");
+        employeeEntity.addIdProperty().autoincrement();
+        employeeEntity.addStringProperty("employeeId").notNull().unique();
+        employeeEntity.addStringProperty("designation").notNull().index();
+        employeeEntity.addStringProperty("name").notNull();
+        employeeEntity.addIntProperty("age");
+        employeeEntity.addStringProperty("sex");
+        employeeEntity.addDateProperty("dateOfBirth");
+        employeeEntity.addDateProperty("dateOfJoining").index().notNull();
+        employeeEntity.addStringProperty("address");
+
+        //Define relationships
+        final Property functionCompanyId = functionEntity.addLongProperty("companyId").notNull().getProperty();
+        functionEntity.addToOne(companyEntity, functionCompanyId);
+        companyEntity.addToMany(functionEntity, functionCompanyId);
+
+        final Property branchCompanyId = branchEntity.addLongProperty("companyId").notNull().getProperty();
+        branchEntity.addToOne(companyEntity, branchCompanyId);
+        companyEntity.addToMany(branchEntity, branchCompanyId);
+
+        final Property teamFunctionId = teamEntity.addLongProperty("functionId").notNull().getProperty();
+        teamEntity.addToOne(functionEntity, teamFunctionId);
+        functionEntity.addToMany(teamEntity, teamFunctionId);
+
+        final Property employeeTeamId = employeeEntity.addLongProperty("teamId").getProperty();
+        employeeEntity.addToOne(teamEntity, employeeTeamId);
+        teamEntity.addToMany(employeeEntity, employeeTeamId);
+
+        final Property teamLeadId = teamEntity.addLongProperty("teamLeadId").getProperty();
+        teamEntity.addToOne(employeeEntity, teamLeadId);
+
+        final Property employeeCompanyId = employeeEntity.addLongProperty("companyId").notNull().getProperty();
+        employeeEntity.addToOne(companyEntity, employeeCompanyId);
+        companyEntity.addToMany(employeeEntity, employeeCompanyId);
+
     }
 
     private static void createV4Schema(Schema v4) {
@@ -52,7 +132,7 @@ public class Generator {
         branchEntity.addStringProperty("branchCode").notNull().unique().index();
         branchEntity.addStringProperty("address");
 
-        final Entity functionEntity = v4.addEntity("Function");
+        final Entity functionEntity = v4.addEntity("Department");
         functionEntity.addIdProperty().autoincrement();
         functionEntity.addStringProperty("functionCode").notNull().unique();
         functionEntity.addStringProperty("name");
