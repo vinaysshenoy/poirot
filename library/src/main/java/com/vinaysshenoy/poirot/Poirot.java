@@ -3,9 +3,7 @@ package com.vinaysshenoy.poirot;
 import de.greenrobot.daogenerator.DaoGenerator;
 import de.greenrobot.daogenerator.Schema;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 /**
  * Created by vinaysshenoy on 16/01/16.
@@ -20,7 +18,11 @@ public class Poirot {
 
     private int mLastVersion;
 
+    private boolean mCurrentSet;
+
     private int mCurrentVersion;
+
+    private final Map<Schema, EntityRenameDesc> mEntityRenameMap;
 
     /**
      * Create an instance of {@link Poirot} with the package name for the schemas.
@@ -34,7 +36,9 @@ public class Poirot {
         mPackageName = packageName;
         mSchemas = new ArrayList<>();
         mLastVersion = 0;
+        mCurrentSet = false;
         mCurrentVersion = 0;
+        mEntityRenameMap = new HashMap<>();
     }
 
     /**
@@ -49,14 +53,15 @@ public class Poirot {
             throw new IllegalArgumentException("Cannot generate schemas with version < 1");
         }
 
-        if (isCurrent && mCurrentVersion > version) {
-            throw new IllegalArgumentException(version + " cannot be greater than already set current version");
+        if (isCurrent && mCurrentSet) {
+            throw new IllegalArgumentException(mCurrentVersion + " already set as current version");
         }
 
         if (mLastVersion >= version) {
             throw new IllegalArgumentException("Version numbers must always be increasing");
         }
         if (isCurrent) {
+            mCurrentSet = true;
             mCurrentVersion = version;
         }
         mLastVersion = version;
