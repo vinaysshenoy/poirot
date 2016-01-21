@@ -204,10 +204,14 @@ public final class Utils {
     }
 
 
-    public static Map<Entity, Entity> getCommonEntitiesAsMap(Schema prev, Schema cur) {
+    public static Map<Entity, Entity> getCommonEntitiesAsMap(Schema prev, Schema cur, EntityRenameDesc entityRenameDesc) {
 
         final AbstractList<String> prevEntityClassList = entityClassList(prev);
         final AbstractList<String> curEntityClassList = entityClassList(cur);
+
+        if (entityRenameDesc != null) {
+            mapOldNamesToNew(prevEntityClassList, entityRenameDesc);
+        }
 
         //Retain all entity classes from the current list that are present in the older list
         curEntityClassList.retainAll(prevEntityClassList);
@@ -218,7 +222,10 @@ public final class Utils {
 
             final Map<Entity, Entity> commonEntityMap = new HashMap<>((int) (curEntityClassList.size() * 1.33F));
             for (String entityName : curEntityClassList) {
-                commonEntityMap.put(prevEntityMap.get(entityName), curEntityMap.get(entityName));
+                commonEntityMap.put(
+                        prevEntityMap.get(entityRenameDesc != null && entityRenameDesc.isChanged(entityName) ? entityRenameDesc.getOriginalName(entityName) : entityName),
+                        curEntityMap.get(entityName)
+                );
             }
             return commonEntityMap;
 
@@ -370,5 +377,47 @@ public final class Utils {
             }
         }
         return properties;
+    }
+
+
+    public static boolean areEquivalent(Property p1, Property p2) {
+        return getPropertySqlDef(p1).equals(getPropertySqlDef(p2));
+    }
+
+    public static Map<Property, Property> getCommonPropertiesAsMap(Entity prev, Entity cur) {
+
+        final AbstractList<String> prevPropertyNameList = propertyNameList(prev);
+        final AbstractList<String> curPropertyNameList = propertyNameList(cur);
+
+        //Retain all properties from the current list that are present in the older list
+        curPropertyNameList.retainAll(prevPropertyNameList);
+        if (curPropertyNameList.size() > 0) {
+
+            final Map<String, Property> prevPropertyMap = propertyMapFromEntity(prev);
+            final Map<String, Property> curPropertyMap = propertyMapFromEntity(cur);
+
+            final Map<Property, Property> commonPropertyMap = new HashMap<>((int) (curPropertyNameList.size() * 1.33F));
+            for (String propertyName : curPropertyNameList) {
+                commonPropertyMap.put(prevPropertyMap.get(propertyName), curPropertyMap.get(propertyName));
+            }
+            return commonPropertyMap;
+
+        } else {
+            return Collections.emptyMap();
+        }
+    }
+
+    public static EntityRenameDesc resolveEntityRenameDescription(Schema from, Schema to, List<EntityRenameDesc> entityRenameDescs) {
+
+        final int fromVersion = from.getVersion();
+        final int toVersion = to.getVersion();
+
+        for (EntityRenameDesc entityRenameDesc : entityRenameDescs) {
+            if (fromVersion == entityRenameDesc.getFromVersion() && toVersion == entityRenameDesc.getToVersion()) {
+                return entityRenameDesc;
+            }
+        }
+
+        return null;
     }
 }

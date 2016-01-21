@@ -9,6 +9,8 @@ import de.greenrobot.daogenerator.Schema;
 import javax.lang.model.element.Modifier;
 import java.util.*;
 
+import static com.vinaysshenoy.poirot.Utils.resolveEntityRenameDescription;
+
 
 /**
  * Created by vinaysshenoy on 17/01/16.
@@ -131,6 +133,8 @@ public class Migrations {
                 .addParameters(Arrays.asList(mDbParameterSpec, mCurrentVersionParameterSpec))
                 .addStatement("prepareMigration($L,$L)", mDbParameterSpec.name, mCurrentVersionParameterSpec.name);
 
+
+        //Order of these statements is important
         handleAddedEntities(from, to, applyMigrationSpecBuilder);
         handleRenamedEntities(from, to, applyMigrationSpecBuilder);
         handleRemovedEntities(from, to, applyMigrationSpecBuilder);
@@ -146,7 +150,7 @@ public class Migrations {
 
     private void handleRenamedEntities(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
-        final EntityRenameDesc entityRenameDesc = resolveEntityRenameDescription(from, to);
+        final EntityRenameDesc entityRenameDesc = resolveEntityRenameDescription(from, to, mEntityRenameDescList);
         if (entityRenameDesc != null) {
 
             final Map<Entity, Entity> renamedEntities = Utils.getRenamed(from, to, entityRenameDesc);
@@ -166,13 +170,13 @@ public class Migrations {
 
     private void handleRemovedIndexes(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
-        final Map<Entity, Entity> entityMap = Utils.getCommonEntitiesAsMap(from, to);
+        final Map<Entity, Entity> entityMap = Utils.getCommonEntitiesAsMap(from, to, resolveEntityRenameDescription(from, to, mEntityRenameDescList));
         for (Map.Entry<Entity, Entity> entityEntry : entityMap.entrySet()) {
             final List<Index> removedIndexes = Utils.getRemovedIndexes(entityEntry.getKey(), entityEntry.getValue());
             if (!removedIndexes.isEmpty()) {
                 System.out.println(String.format(Locale.US, "Removed %d indexes when going from v%d to v%d for entity %s", removedIndexes.size(), from.getVersion(), to.getVersion(), entityEntry.getKey().getClassName()));
             }
-            removeIndexes(entityEntry.getKey(), removedIndexes, applyMigrationBuilder);
+            removeIndexes(entityEntry.getValue(), removedIndexes, applyMigrationBuilder);
         }
     }
 
@@ -190,7 +194,7 @@ public class Migrations {
 
     private void handleAddedIndexes(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
-        final Map<Entity, Entity> entityMap = Utils.getCommonEntitiesAsMap(from, to);
+        final Map<Entity, Entity> entityMap = Utils.getCommonEntitiesAsMap(from, to, resolveEntityRenameDescription(from, to, mEntityRenameDescList));
         for (Map.Entry<Entity, Entity> entityEntry : entityMap.entrySet()) {
             final List<Index> addedIndexes = Utils.getAddedIndexes(entityEntry.getKey(), entityEntry.getValue());
             if (!addedIndexes.isEmpty()) {
@@ -215,13 +219,13 @@ public class Migrations {
 
     private void handleAddedColumns(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
-        final Map<Entity, Entity> entityMap = Utils.getCommonEntitiesAsMap(from, to);
+        final Map<Entity, Entity> entityMap = Utils.getCommonEntitiesAsMap(from, to, resolveEntityRenameDescription(from, to, mEntityRenameDescList));
         for (Map.Entry<Entity, Entity> entityEntry : entityMap.entrySet()) {
             final List<Property> addedProperties = Utils.getAddedProperties(entityEntry.getKey(), entityEntry.getValue());
             if (!addedProperties.isEmpty()) {
                 System.out.println(String.format(Locale.US, "Added %d properties when going from v%d to v%d for entity %s", addedProperties.size(), from.getVersion(), to.getVersion(), entityEntry.getKey().getClassName()));
             }
-            addColumns(entityEntry.getKey(), addedProperties, applyMigrationBuilder);
+            addColumns(entityEntry.getValue(), addedProperties, applyMigrationBuilder);
         }
     }
 
@@ -236,7 +240,7 @@ public class Migrations {
 
     private void handleAddedEntities(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
-        final List<Entity> addedEntities = Utils.getAdded(from, to, resolveEntityRenameDescription(from, to));
+        final List<Entity> addedEntities = Utils.getAdded(from, to, resolveEntityRenameDescription(from, to, mEntityRenameDescList));
         if (!addedEntities.isEmpty()) {
             System.out.println(String.format(Locale.US, "Added %d entities when going from v%d to v%d", addedEntities.size(), from.getVersion(), to.getVersion()));
         }
@@ -255,7 +259,7 @@ public class Migrations {
 
     private void handleRemovedEntities(Schema from, Schema to, MethodSpec.Builder applyMigrationBuilder) {
 
-        final List<Entity> removedEntities = Utils.getRemoved(from, to, resolveEntityRenameDescription(from, to));
+        final List<Entity> removedEntities = Utils.getRemoved(from, to, resolveEntityRenameDescription(from, to, mEntityRenameDescList));
         if (!removedEntities.isEmpty()) {
             System.out.println(String.format(Locale.US, "Removed %d entities when going from v%d to v%d", removedEntities.size(), from.getVersion(), to.getVersion()));
         }
@@ -323,20 +327,6 @@ public class Migrations {
         return JavaFile.builder(currentSchema.getDefaultJavaPackage() + ".helper.migrations", abstractMigrationHelperSpec)
                 .addFileComment(Poirot.GENERATED_FILE)
                 .build();
-    }
-
-    private EntityRenameDesc resolveEntityRenameDescription(Schema from, Schema to) {
-
-        final int fromVersion = from.getVersion();
-        final int toVersion = to.getVersion();
-
-        for (EntityRenameDesc entityRenameDesc : mEntityRenameDescList) {
-            if (fromVersion == entityRenameDesc.getFromVersion() && toVersion == entityRenameDesc.getToVersion()) {
-                return entityRenameDesc;
-            }
-        }
-
-        return null;
     }
 
 }

@@ -121,9 +121,14 @@ public class Poirot {
             );
         }
 
-        final PoirotDbHelperGenerator helperGenerator = new PoirotDbHelperGenerator(mSchemas, mEntityRenameDescList);
-        helperGenerator.generateHelper(currentSchemaOutputDirectory);
-
+        final EntityVerifier entityVerifier = new EntityVerifier(mSchemas, mEntityRenameDescList);
+        try {
+            entityVerifier.verify();
+            final PoirotDbHelperGenerator helperGenerator = new PoirotDbHelperGenerator(mSchemas, mEntityRenameDescList);
+            helperGenerator.generateHelper(currentSchemaOutputDirectory);
+        } catch (EntityVerifier.VerificationFailedException e) {
+            throw new RuntimeException("Failed to verify entities!", e);
+        }
     }
 
     private static boolean isEmpty(String string) {

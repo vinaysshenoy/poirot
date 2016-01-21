@@ -63,6 +63,7 @@ public class Generator {
         companyEntity.addStringProperty("companyCode").notNull().unique().index();
         companyEntity.addStringProperty("name").notNull();
         companyEntity.addDateProperty("incorporationDate");
+        companyEntity.addStringProperty("panNumber").notNull().unique();
 
         final Entity branchEntity = v5.addEntity("Branch");
         branchEntity.addIdProperty().autoincrement();
@@ -72,7 +73,7 @@ public class Generator {
         final Entity functionEntity = v5.addEntity("Function");
         functionEntity.addIdProperty().autoincrement();
         functionEntity.addStringProperty("functionCode").notNull().unique();
-        functionEntity.addStringProperty("name");
+        functionEntity.addStringProperty("name").notNull();
 
         final Entity teamEntity = v5.addEntity("Team");
         teamEntity.addIdProperty().autoincrement();
@@ -135,7 +136,7 @@ public class Generator {
         final Entity functionEntity = v4.addEntity("Department");
         functionEntity.addIdProperty().autoincrement();
         functionEntity.addStringProperty("functionCode").notNull().unique();
-        functionEntity.addStringProperty("name");
+        functionEntity.addStringProperty("name").notNull();
 
         final Entity teamEntity = v4.addEntity("Team");
         teamEntity.addIdProperty().autoincrement();
@@ -198,7 +199,7 @@ public class Generator {
         final Entity functionEntity = v3.addEntity("Function");
         functionEntity.addIdProperty().autoincrement();
         functionEntity.addStringProperty("functionCode").notNull().unique();
-        functionEntity.addStringProperty("name");
+        functionEntity.addStringProperty("name").notNull();
 
         final Entity teamEntity = v3.addEntity("Team");
         teamEntity.addIdProperty().autoincrement();

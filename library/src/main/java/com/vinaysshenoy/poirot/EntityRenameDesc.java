@@ -50,6 +50,10 @@ public class EntityRenameDesc {
         return null;
     }
 
+    public boolean isChanged(String originalName) {
+        return mNameMap.containsValue(originalName);
+    }
+
     public static final class Builder {
 
         public final Map<String, String> nameMaps;
