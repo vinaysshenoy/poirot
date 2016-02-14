@@ -20,11 +20,11 @@ public class EntityRenameDesc {
     }
 
     /*package*/ void setFromVersion(int fromVersion) {
-        this.mFromVersion = fromVersion;
+        mFromVersion = fromVersion;
     }
 
     /*package*/ void setToVersion(int toVersion) {
-        this.mToVersion = toVersion;
+        mToVersion = toVersion;
     }
 
     public int getFromVersion() {
@@ -50,8 +50,8 @@ public class EntityRenameDesc {
         return null;
     }
 
-    public boolean isChanged(String originalName) {
-        return mNameMap.containsValue(originalName);
+    public boolean isChanged(String entityName) {
+        return mNameMap.containsValue(entityName);
     }
 
     public static final class Builder {

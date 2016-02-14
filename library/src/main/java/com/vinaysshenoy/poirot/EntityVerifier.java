@@ -29,16 +29,6 @@ public class EntityVerifier {
     public void verify() throws VerificationFailedException {
 
         verifyPropertiesNotChanged();
-        verifyRemovedPropertiesNotReused();
-    }
-
-    /**
-     * Since SQLite does not support dropping columns, this method verifies that
-     * a property that was dropped(or rather, removed from schema but not from the database)
-     * is not used in the same entity again in a later schema version.
-     */
-    private void verifyRemovedPropertiesNotReused() {
-
     }
 
     /**
@@ -99,4 +89,6 @@ public class EntityVerifier {
             super(message, cause, enableSuppression, writableStackTrace);
         }
     }
+
+
 }

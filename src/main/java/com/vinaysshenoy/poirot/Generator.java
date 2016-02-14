@@ -55,8 +55,6 @@ public class Generator {
 
     private static void createV5Schema(Schema v5) {
 
-        v5.enableKeepSectionsByDefault();
-
         //Define entities
         final Entity companyEntity = v5.addEntity("Organization");
         companyEntity.addIdProperty().autoincrement();
@@ -119,8 +117,6 @@ public class Generator {
 
     private static void createV4Schema(Schema v4) {
 
-        v4.enableKeepSectionsByDefault();
-
         //Define entities
         final Entity companyEntity = v4.addEntity("Company");
         companyEntity.addIdProperty().autoincrement();
@@ -181,8 +177,6 @@ public class Generator {
     }
 
     private static void createV3Schema(Schema v3) {
-
-        v3.enableKeepSectionsByDefault();
 
         //Define entities
         final Entity companyEntity = v3.addEntity("Company");
@@ -250,8 +244,6 @@ public class Generator {
 
     private static void createV2Schema(Schema v2) {
 
-        v2.enableKeepSectionsByDefault();
-
         //Define entities
         final Entity companyEntity = v2.addEntity("Company");
         companyEntity.addIdProperty().autoincrement();
@@ -291,8 +283,6 @@ public class Generator {
     }
 
     private static void createV1Schema(Schema v1) {
-
-        v1.enableKeepSectionsByDefault();
 
         //Define entities
         final Entity companyEntity = v1.addEntity("Company");

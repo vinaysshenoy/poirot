@@ -420,4 +420,20 @@ public final class Utils {
 
         return null;
     }
+
+    public static Entity succeeding(Entity entity, Schema nextSchema, EntityRenameDesc entityRenameDesc) {
+
+        final Map<String, Entity> succeedingEntityMap = entityMapFromSchema(nextSchema);
+        Entity succeeding = null;
+        if(entityRenameDesc != null) {
+            final String succeedingName = entityRenameDesc.getChangedName(entity.getClassName());
+            if(succeedingName != null) {
+                succeeding = succeedingEntityMap.get(succeedingName);
+            }
+        }
+        if(succeeding == null) {
+            succeeding = succeedingEntityMap.get(entity.getClassName());
+        }
+        return succeeding;
+    }
 }
