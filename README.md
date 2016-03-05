@@ -1,14 +1,58 @@
-# poirot
-Adds automatic migration support for Greendao.
+# Poirot
 
-## Pre-Alpha and not thoroughly tested. Do NOT use in production unless you like to live on the wild side!
+## Automagical database migrations for [GreenDao](http://greenrobot.org/greendao/)
 
-### API Usage coming soon. For now, please check the [Dao Generator](https://github.com/vinaysshenoy/poirot/blob/master/src/main/java/com/vinaysshenoy/poirot/Generator.java) file for more info.
+Adding migrations in Android for databases is tricky and involves a lot a human effort. There is huge scope for human error and screwed up migrations. Poirot aims to fix that by attempting to automatically generating migrations where it can, and by forcing certain practices upon the user
 
-* The generator file will generate a `PoirotDbHelper.java` source file that you can drop in place of GreenDao's Open Helper and it will take care of automatically migrating your database for you.
+### Quick Usage
+1. Replace the GreenDao-Generator dependency in your generator project with Poirot.
+2. Define your entities using Poirot
+3. Generate your Dao classes using Poirot
+4. Use the generate `PoirotDbHelper.java` and your migrations will be handled automatically
 
-* Maven support is on the way. For now, clone and use this Generator project to create your entities. Do not depend on your version of the GreenDao generator, use the one that this library depends on.
+### Features
+Poirot handles
+- Addition, deletion and renaming of tables
+- Addition of columns
+- Addition and removal of Indexes
 
-* When you add a new schema, do NOT change the older schema. Write the new schema from scratch. `Poirot` will examine the diffs between schemas to generate the corressponding migrations.
+Changing of field constraints, renaming and dropping of fields is not supported by SQLite, hence Poirot does not support it and takes steps to ensure that these actions are not allowed.
 
-* This currently uses version `2.1.0` of the GreenDao generator, so link to the corressponding core library in your client app.
+### Usage
+#### Include the dependency in your Generator project
+##### Maven
+```xml
+<dependency>
+    <groupId>com.vinaysshenoy</groupId>
+    <artifactId>poirot</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+##### Gradle
+```groovy
+compile 'com.vinaysshenoy:poirot:1.0.0'
+```
+
+#### Create Entities
+In Poirot, instead of modifying your entity, you create a whole new set of entities for each version. This enables Poirot to examine the differences between successive schemas and generate code.
+```java
+//The root package for all the generated source
+final Poirot poirot = new Poirot("com.poirot.example.db");
+createV1Schema(poirot.create(1, false));
+createV2Schema(poirot.create(2, false));
+//The current version has to be marked true
+createV3Schema(poirot.create(3, true));
+```
+`poirot.create()` returns a standard GreenDao `Entity`, so you can use it as usual.
+
+#### Generate your entities
+After defining your entities, you generate them by calling `poirot.generate()`.
+```java
+poirot.generate("out/java/cur", "out/java/old");
+```
+The current DAO classes are generated under the "cur" directory, while the older classes are generated under the "old" directory. This allows you to test the migrations using your testing framework if you wish.
+
+#### Use the generated DbHelper
+Along with the entities, a `PoirotDbHelper.java` will be generated under `out/java/cur/com/poirot/example/db/helper`. All you need to do is use this class instead of GreenDao's default `OpenHelper` and you have automatic migrations.
+ 
+### Greendao Version - 2.1.0
