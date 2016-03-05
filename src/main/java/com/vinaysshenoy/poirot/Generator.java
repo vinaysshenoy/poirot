@@ -12,7 +12,7 @@ import java.nio.file.Paths;
  */
 public class Generator {
 
-    private static final String PACKAGE_NAME = "com.vinaysshenoy.poirot.db";
+    private static final String PACKAGE_NAME = "com.vinaysshenoy.poirot.example.db";
     private static final Path OUT_DIR_ROOT = Paths.get("out", "java");
     private static final Path CURRENT_SCHEMA_DIR = OUT_DIR_ROOT.resolve("cur");
     private static final Path OLD_SCHEMA_DIR = OUT_DIR_ROOT.resolve("old");
@@ -31,6 +31,7 @@ public class Generator {
                 false,
                 entityRenameDescBuilder
                         .reset()
+                        //Function Entity from < v3 has been renamed to Department in v4
                         .map("Function", "Department")
                         .build()
         ));
@@ -38,10 +39,12 @@ public class Generator {
                 5,
                 true,
                 entityRenameDescBuilder
-                .reset()
-                .map("Department", "Function")
-                .map("Company", "Organization")
-                .build()
+                        .reset()
+                        //Department Entity from v4 has been renamed back to Function in v5
+                        .map("Department", "Function")
+                        //Company Entity from v4 has been renamed to Organization in v5
+                        .map("Company", "Organization")
+                        .build()
         ));
 
         try {
