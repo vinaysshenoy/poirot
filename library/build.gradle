@@ -2,6 +2,7 @@ group 'com.vinaysshenoy'
 version '1.0.0'
 
 apply plugin: 'java'
+apply from: 'maventask.gradle'
 
 repositories {
     mavenCentral()
