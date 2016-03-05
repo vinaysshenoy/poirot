@@ -10,7 +10,7 @@ Adding migrations in Android for databases is tricky and involves a lot a human 
 1. Replace the GreenDao-Generator dependency in your generator project with Poirot.
 2. Define your entities using Poirot
 3. Generate your Dao classes using Poirot
-4. Use the generate `PoirotDbHelper.java` and your migrations will be handled automatically
+4. Use the generated `PoirotDbHelper.java` and your migrations will be handled automatically
 
 ### Features
 Poirot handles
@@ -64,6 +64,9 @@ The current DAO classes are generated under the "cur" directory, while the older
 
 #### Use the generated DbHelper
 Along with the entities, a `PoirotDbHelper.java` will be generated under `out/java/cur/com/poirot/example/db/helper`. All you need to do is use this class instead of GreenDao's default `OpenHelper` and you have automatic migrations.
+```java
+final DaoMaster.OpenHelper helper = new PoirotDbHelper(application, "my_db", null);
+```
 
 ### Credits
 1. [GreenDao](http://greenrobot.org/greendao/), for an awesome ORM
