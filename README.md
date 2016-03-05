@@ -68,4 +68,4 @@ Along with the entities, a `PoirotDbHelper.java` will be generated under `out/ja
 ### Credits
 1. [GreenDao](http://greenrobot.org/greendao/), for an awesome ORM
 2. The core migration class structure was described in a StackOverflow [post] (http://stackoverflow.com/questions/13373170/greendao-schema-update-and-data-migration). The core website is no longer available but the archives are present [here](https://web.archive.org/web/20140215121239/http://www.androidanalyse.com/greendao-schema-generation/).
-3. The amazing devs at Square for creating [javapoet](https://github.com/square/javapoet), without which the code generation for Poirot would've taken orders of magnitude longer)
+3. The amazing devs at Square for creating [javapoet](https://github.com/square/javapoet), without which the code generation for Poirot would've taken orders of magnitude longer
