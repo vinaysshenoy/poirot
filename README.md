@@ -40,10 +40,18 @@ In Poirot, instead of modifying your entity, you create a whole new set of entit
 ```java
 //The root package for all the generated source
 final Poirot poirot = new Poirot("com.poirot.example.db");
+
+//Used for describing change in Entity names across schemas
+final EntityRenameDesc.Builder entityRenameDescBuilder = new EntityRenameDesc.Builder();
+
 createV1Schema(poirot.create(1, false));
 createV2Schema(poirot.create(2, false));
+createV3Schema(poirot.create(3, false));
 //The current version has to be marked true
-createV3Schema(poirot.create(3, true));
+createV4Schema(poirot.create(4, true, entityRenameDescBuilder
+                        .reset()
+                        .map("Function", "Department") //Function Entity from < v3 has been renamed to Department in v4
+                        .build()));
 ```
 `poirot.create()` returns a standard GreenDao `Entity`, so you can use it as usual.
 
