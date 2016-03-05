@@ -103,6 +103,10 @@ public class Poirot {
      */
     public void generate(String currentSchemaOutputDirectory, String olderSchemaOutputDirectory) throws Exception {
 
+        System.out.println("Poirot\n" +
+                "Copyright 2016 Vinay Shenoy, vinaysshenoy.com. Licensed under GPL V3.\n" +
+                "This program comes with ABSOLUTELY NO WARRANTY");
+
         if (isEmpty(currentSchemaOutputDirectory) || isEmpty(olderSchemaOutputDirectory)) {
             throw new IllegalArgumentException("Either current or older output directories cannot be null or empty");
         }
