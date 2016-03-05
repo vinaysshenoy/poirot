@@ -50,6 +50,7 @@ public class Poirot {
      *
      * @param version   The schema version. Versions should always be increasing, with the current schema having the highest version
      * @param isCurrent Whether the schema is the current one or not
+     * @return The created Schema
      */
     public Schema create(int version, boolean isCurrent) {
         return create(version, isCurrent, null);
@@ -61,6 +62,7 @@ public class Poirot {
      * @param version          The schema version. Versions should always be increasing, with the current schema having the highest version
      * @param isCurrent        Whether the schema is the current one or not
      * @param entityRenameDesc A description of which entities have been renamed from the previous schema
+     * @return The created Schema
      */
     public Schema create(int version, boolean isCurrent, EntityRenameDesc entityRenameDesc) {
 

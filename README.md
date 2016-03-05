@@ -53,7 +53,7 @@ createV4Schema(poirot.create(4, true, entityRenameDescBuilder
                         .map("Function", "Department") //Function Entity from < v3 has been renamed to Department in v4
                         .build()));
 ```
-`poirot.create()` returns a standard GreenDao `Entity`, so you can use it as usual.
+`poirot.create()` returns a standard GreenDao `Schema`, so you can use it as usual.
 
 #### Generate your entities
 After defining your entities, you generate them by calling `poirot.generate()`.

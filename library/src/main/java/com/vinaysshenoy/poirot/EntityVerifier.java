@@ -12,7 +12,6 @@ import static com.vinaysshenoy.poirot.Utils.resolveEntityRenameDescription;
 
 /**
  * Class that verifies entities and checks whether there are any problems
- * <p/>
  * Created by vinaysshenoy on 21/01/16.
  */
 public class EntityVerifier {
