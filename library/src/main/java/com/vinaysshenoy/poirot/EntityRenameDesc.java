@@ -5,6 +5,7 @@ import java.util.Map;
 
 /**
  * Class that is used to describe the renaming of an Entity from one schema to the next
+ *
  * Created by vinaysshenoy on 18/01/16.
  */
 public class EntityRenameDesc {
@@ -15,7 +16,7 @@ public class EntityRenameDesc {
 
     public final Map<String, String> mNameMap;
 
-    public EntityRenameDesc(Builder builder) {
+    private EntityRenameDesc(Builder builder) {
         mNameMap = new HashMap<>(builder.nameMaps);
     }
 

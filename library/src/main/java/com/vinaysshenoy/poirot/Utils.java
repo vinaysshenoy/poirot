@@ -10,18 +10,34 @@ import java.io.File;
 import java.util.*;
 
 /**
+ * Internal Utility class for working with {@link Schema}, {@link Entity} and {@link Property} objects
+ * <p/>
  * Created by vinaysshenoy on 17/01/16.
  */
-public final class Utils {
+final class Utils {
 
     private Utils() {
 
     }
 
+    /**
+     * Generates the migration class name for migrating from one DB version to the other
+     *
+     * @param packageName The name of the package the generated DB classes should reside in
+     * @param from        The Schema from which the DB is migrating from
+     * @param to          The Schema to which the DB is migrating
+     * @return The Classname of the migration
+     */
     public static ClassName generateMigrationName(String packageName, Schema from, Schema to) {
         return ClassName.get(packageName, String.format(Locale.US, "MigrateV%dToV%d", from.getVersion(), to.getVersion()));
     }
 
+    /**
+     * Creates a Map of the entity names to the entities from a schema
+     *
+     * @param schema The schema for which to generate the map
+     * @return The Map of entities
+     */
     public static Map<String, Entity> entityMapFromSchema(Schema schema) {
 
         final Map<String, Entity> entityMap = new HashMap<>((int) (schema.getEntities().size() * 1.33F));
@@ -31,6 +47,12 @@ public final class Utils {
         return entityMap;
     }
 
+    /**
+     * Creates a map of the property names to the properties for a schema
+     *
+     * @param entity The entity for which to generate the map
+     * @return The Map of properties
+     */
     public static Map<String, Property> propertyMapFromEntity(Entity entity) {
 
         final Map<String, Property> propertyMap = new HashMap<>((int) (entity.getProperties().size() * 1.33F));
@@ -40,6 +62,12 @@ public final class Utils {
         return propertyMap;
     }
 
+    /**
+     * Creates a map of the index names to the indexes(?) for a schema
+     *
+     * @param entity The entity for which to generate the map
+     * @return The map of indexes
+     */
     public static Map<String, Index> indexMapFromEntity(Entity entity) {
 
         final Map<String, Index> indexMap = new HashMap<>((int) (entity.getIndexes().size() * 1.33F));
@@ -49,6 +77,14 @@ public final class Utils {
         return indexMap;
     }
 
+    /**
+     * Get a list of the entities from the schema
+     * <p/>
+     * Note: This was added because we specifically need an Abstract list
+     *
+     * @param schema The schema for which to generate the list
+     * @return The list of entities
+     */
     public static AbstractList<String> entityClassList(Schema schema) {
 
         final AbstractList<String> entityClassList = new ArrayList<>(schema.getEntities().size());
@@ -59,6 +95,14 @@ public final class Utils {
         return entityClassList;
     }
 
+    /**
+     * Get a list of the properties from the entitiy
+     * <p/>
+     * Note: This was added because we specifically need an Abstract list
+     *
+     * @param entity The entity for which to generate the list
+     * @return The list of properties
+     */
     public static AbstractList<String> propertyNameList(Entity entity) {
 
         final AbstractList<String> propertyNameList = new ArrayList<>(entity.getProperties().size());
@@ -69,6 +113,14 @@ public final class Utils {
         return propertyNameList;
     }
 
+    /**
+     * Get a list of the indexes from the entitiy
+     * <p/>
+     * Note: This was added because we specifically need an Abstract list
+     *
+     * @param entity The entity for which to generate the list
+     * @return The list of indexes
+     */
     public static AbstractList<String> indexNameList(Entity entity) {
 
         final AbstractList<String> indexNameList = new ArrayList<>(entity.getIndexes().size());
@@ -79,6 +131,13 @@ public final class Utils {
         return indexNameList;
     }
 
+    /**
+     * Get a list of the indexes that were added from going from one entity to the other
+     *
+     * @param prev The entity from which we are migrating
+     * @param cur  The entity to which we are migrating
+     * @return The list of added indexes
+     */
     public static List<Index> getAddedIndexes(Entity prev, Entity cur) {
 
         final AbstractList<String> prevIndexNameList = indexNameList(prev);
@@ -103,6 +162,13 @@ public final class Utils {
         }
     }
 
+    /**
+     * Get a list of the indexes that were removed from going from one entity to the other
+     *
+     * @param prev The entity from which we are migrating
+     * @param cur  The entity to which we are migrating
+     * @return The list of removed indexes
+     */
     public static List<Index> getRemovedIndexes(Entity prev, Entity cur) {
 
         final AbstractList<String> prevIndexNameList = indexNameList(prev);
@@ -127,6 +193,14 @@ public final class Utils {
         }
     }
 
+    /**
+     * Get a list of the entities that were added from going from one schema to the other
+     *
+     * @param prev             The schema from which we are migrating
+     * @param cur              The schema to which we are migrating
+     * @param entityRenameDesc {@link EntityRenameDesc} to denote if the name of any enity has changed when going from {@code prev} to {@code cur}
+     * @return The list of added indexes
+     */
     public static List<Entity> getAdded(Schema prev, Schema cur, EntityRenameDesc entityRenameDesc) {
 
         final AbstractList<String> prevEntityClassList = entityClassList(prev);
@@ -155,6 +229,13 @@ public final class Utils {
         }
     }
 
+    /**
+     * Get a list of the properties that were added when going from one entity to the other
+     *
+     * @param prev The entity from which we are migrating
+     * @param cur  The entity to which we are migrating
+     * @return The list of added properties
+     */
     public static List<Property> getAddedProperties(Entity prev, Entity cur) {
 
         final AbstractList<String> prevPropertyNameList = propertyNameList(prev);
@@ -179,6 +260,13 @@ public final class Utils {
         }
     }
 
+    /**
+     * Get a list of the properties that were removed when going from one entity to the other
+     *
+     * @param prev The entity from which we are migrating
+     * @param cur  The entity to which we are migrating
+     * @return The list of removed properties
+     */
     public static List<Property> getRemovedProperties(Entity prev, Entity cur) {
 
         final AbstractList<String> prevPropertyNameList = propertyNameList(prev);
@@ -203,7 +291,14 @@ public final class Utils {
         }
     }
 
-
+    /**
+     * Get a Map of the common entites between two schemas
+     *
+     * @param prev             The schema from which we are migrating
+     * @param cur              The schema to which we are migrating
+     * @param entityRenameDesc The {@link EntityRenameDesc} to denote if the name of any enity has changed when going from {@code prev} to {@code cur}
+     * @return The map of common entities
+     */
     public static Map<Entity, Entity> getCommonEntitiesAsMap(Schema prev, Schema cur, EntityRenameDesc entityRenameDesc) {
 
         final AbstractList<String> prevEntityClassList = entityClassList(prev);
@@ -234,6 +329,12 @@ public final class Utils {
         }
     }
 
+    /**
+     * Converts a list of names of a newer entity to the older one, based on the {@link EntityRenameDesc} provided
+     *
+     * @param namesList        The list of names belonging to a newer Entity
+     * @param entityRenameDesc The {@link EntityRenameDesc} to denote if the name of any entity has changed
+     */
     public static void mapNewNamesToOld(AbstractList<String> namesList, EntityRenameDesc entityRenameDesc) {
 
         final ListIterator<String> entityClassIterator = namesList.listIterator();
@@ -248,6 +349,12 @@ public final class Utils {
         }
     }
 
+    /**
+     * Converts a list of names of an older entity to a newer one, based on the {@link EntityRenameDesc} provided
+     *
+     * @param namesList        The list of names belonging to a older Entity
+     * @param entityRenameDesc The {@link EntityRenameDesc} {@link EntityRenameDesc} to denote if the name of any entity has changed
+     */
     public static void mapOldNamesToNew(AbstractList<String> namesList, EntityRenameDesc entityRenameDesc) {
 
         final ListIterator<String> entityClassIterator = namesList.listIterator();
@@ -262,6 +369,14 @@ public final class Utils {
         }
     }
 
+    /**
+     * Get a map of the entities that have been renamed when going from one schema to the next
+     *
+     * @param prev             The schema from which we are migrating
+     * @param cur              The schema to which we are migrating
+     * @param entityRenameDesc The {@link EntityRenameDesc} to denote if the name of any enity has changed when going from {@code prev} to {@code cur}
+     * @return The map of old to new entities
+     */
     public static Map<Entity, Entity> getRenamed(Schema prev, Schema cur, EntityRenameDesc entityRenameDesc) {
 
         final AbstractList<String> prevEntityClassList = entityClassList(prev);
@@ -306,6 +421,14 @@ public final class Utils {
 
     }
 
+    /**
+     * Get a list of the entities that were removed from going from one schema to the next
+     *
+     * @param prev             The The schema from which we are migrating
+     * @param cur              The schema to which we are migrating
+     * @param entityRenameDesc The {@link EntityRenameDesc} to denote if the name of any enity has changed when going from {@code prev} to {@code cur}
+     * @return The list of removed entities
+     */
     public static List<Entity> getRemoved(Schema prev, Schema cur, EntityRenameDesc entityRenameDesc) {
 
         final AbstractList<String> prevEntityClassList = entityClassList(prev);
@@ -337,6 +460,8 @@ public final class Utils {
 
     /**
      * Ensures that the directories exist
+     *
+     * @param filePaths The directories to create
      */
     public static void ensureDirectory(String... filePaths) {
 
@@ -355,6 +480,12 @@ public final class Utils {
         }
     }
 
+    /**
+     * Creates a formatted SQL string for a Property
+     *
+     * @param property The property for which to generate an SQL definition
+     * @return The formatted SQL string
+     */
     public static String getPropertySqlDef(Property property) {
         if (property.getConstraints() != null) {
             return String.format(Locale.US, "\"%s\" %s %s", property.getColumnName(), property.getColumnType(), property.getConstraints());
@@ -363,6 +494,12 @@ public final class Utils {
         }
     }
 
+    /**
+     * Gets a list of properties from the entity, excluding the primary key property
+     *
+     * @param entity The entity for which to generate the list
+     * @return The list of properties, sans the Primary Key property
+     */
     public static List<Property> entityPropertiesWithoutPrimaryKey(Entity entity) {
 
         final List<Property> properties = new ArrayList<>(entity.getProperties());
@@ -380,6 +517,13 @@ public final class Utils {
     }
 
 
+    /**
+     * Checks whether the SQL definitions of two properties are equivalent or not
+     *
+     * @param p1 The first property
+     * @param p2 The second property
+     * @return {@code true} if the equivalent, {@code false} otherwise
+     */
     public static boolean areEquivalent(Property p1, Property p2) {
         return getPropertySqlDef(p1).equals(getPropertySqlDef(p2));
     }
@@ -407,6 +551,14 @@ public final class Utils {
         }
     }
 
+    /**
+     * Fetches the right {@link EntityRenameDesc} for mapping entites when moving between schemas
+     *
+     * @param from              The Schema from which the DB is migrating from
+     * @param to                The Schema to which the DB is migrating
+     * @param entityRenameDescs The list of entity rename descriptors
+     * @return The right Entity rename descriptor, or {@code null} if no entity has been renamed
+     */
     public static EntityRenameDesc resolveEntityRenameDescription(Schema from, Schema to, List<EntityRenameDesc> entityRenameDescs) {
 
         final int fromVersion = from.getVersion();
@@ -421,17 +573,25 @@ public final class Utils {
         return null;
     }
 
+    /**
+     * Finds the succeeding entity for a given Entity in the succeeding schema
+     *
+     * @param entity           The entity for which to find the succeeding entity
+     * @param nextSchema       The succeeding schema in which to find the succeeding entity
+     * @param entityRenameDesc The entity rename descriptor
+     * @return The succeeding entitiy, or {@code null} if none exist
+     */
     public static Entity succeeding(Entity entity, Schema nextSchema, EntityRenameDesc entityRenameDesc) {
 
         final Map<String, Entity> succeedingEntityMap = entityMapFromSchema(nextSchema);
         Entity succeeding = null;
-        if(entityRenameDesc != null) {
+        if (entityRenameDesc != null) {
             final String succeedingName = entityRenameDesc.getChangedName(entity.getClassName());
-            if(succeedingName != null) {
+            if (succeedingName != null) {
                 succeeding = succeedingEntityMap.get(succeedingName);
             }
         }
-        if(succeeding == null) {
+        if (succeeding == null) {
             succeeding = succeedingEntityMap.get(entity.getClassName());
         }
         return succeeding;
